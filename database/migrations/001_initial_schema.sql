@@ -137,6 +137,12 @@ begin
 end;
 $$;
 
+drop trigger if exists app_users_set_updated_at on app_users;
+drop trigger if exists workspaces_set_updated_at on workspaces;
+drop trigger if exists ideas_set_updated_at on ideas;
+drop trigger if exists projects_set_updated_at on projects;
+drop trigger if exists performance_entries_set_updated_at on performance_entries;
+
 create trigger app_users_set_updated_at before update on app_users for each row execute function set_updated_at();
 create trigger workspaces_set_updated_at before update on workspaces for each row execute function set_updated_at();
 create trigger ideas_set_updated_at before update on ideas for each row execute function set_updated_at();
