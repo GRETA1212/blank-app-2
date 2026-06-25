@@ -2,6 +2,7 @@ import type {
   Health,
   OverviewData,
   PerformanceEntry,
+  ProductionJob,
   Project,
   ProjectStatus,
   QualityReport,
@@ -83,6 +84,8 @@ export const api = {
   updateProject: (id: string, payload: Partial<Project>) =>
     request<Project>(`/projects/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteProject: (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' }),
+  productionJobs: () => request<ProductionJob[]>('/production/jobs'),
+  renderProject: (id: string) => request<ProductionJob>(`/production/jobs/${id}`, { method: 'POST' }),
   mirofishSeed: (payload: {
     project_id: string;
     topic: string;
