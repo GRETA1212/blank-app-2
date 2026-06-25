@@ -99,6 +99,21 @@ export interface Project {
   published_at?: string | null;
 }
 
+export interface ProductionJob {
+  id: string;
+  project_id: string;
+  project_title?: string;
+  status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  worker: string;
+  output_url?: string | null;
+  subtitle_url?: string | null;
+  error_message?: string | null;
+  created_at: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  notice?: string;
+}
+
 export interface PerformanceEntry {
   id: string;
   project_id: string;
