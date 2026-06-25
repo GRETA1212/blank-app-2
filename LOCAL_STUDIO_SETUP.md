@@ -1,82 +1,57 @@
-# Local AI Studio — Phase 1
+# Local Studio Setup
 
-This branch starts a self-hosted content-studio stack designed to avoid mandatory monthly AI and automation subscriptions.
+The repository now contains the full local MVP. The main guide is in `README.md`; this file is the condensed startup checklist.
 
-## Included
+## Included services
 
-- **Ollama** for local language models
-- **PostgreSQL** for project and pipeline data
-- **n8n Community Edition** for local automation
-- **FastAPI Studio Orchestrator** for one stable API between the dashboard, Ollama, and future MiroFish integration
-- A manual MiroFish seed endpoint; automatic MiroFish submission is intentionally not claimed yet
+- React Studio Control Center — port 3000
+- FastAPI Studio Orchestrator — port 8000
+- PostgreSQL — host port 5433
+- Ollama — port 11434
+- SearXNG — port 8080
+- Local FFmpeg/eSpeak media worker — port 9000
+- Node-RED — port 1880
+- Optional separate MiroFish installation — normally port 5001
 
-## Requirements
+## Windows startup
 
-- Docker Desktop
-- Git
-- At least 16 GB RAM recommended for `qwen3:8b`; use a smaller model if needed
+```powershell
+git switch feature/local-ai-studio
+powershell -ExecutionPolicy Bypass -File .\scripts\start-studio.ps1
+```
 
-## Start
+The script creates `.env`, builds the containers, starts the services, downloads the configured Ollama model, and opens the dashboard.
+
+## Manual startup
 
 ```powershell
 copy .env.local.example .env
-
 docker compose -f docker-compose.local.yml up -d --build
-
-docker exec -it studio-ollama ollama pull qwen3:8b
+docker exec studio-ollama ollama pull qwen3:8b
 ```
 
-Open:
-
-- Orchestrator API docs: http://localhost:8000/docs
-- n8n: http://localhost:5678
-- Ollama: http://localhost:11434
-- PostgreSQL host port: 5433
-
-Check services:
+## Health check
 
 ```powershell
-curl http://localhost:8000/health
+.\scripts\status-studio.ps1
 ```
 
-## Current API
+Or open:
 
-### `POST /ai/generate`
-
-Calls the configured Ollama model locally.
-
-```json
-{
-  "system": "You are a careful research assistant.",
-  "prompt": "Create three original video angles about AI in surveying.",
-  "temperature": 0.4
-}
+```text
+http://localhost:8000/health
 ```
 
-### `POST /mirofish/seed`
+## Stop
 
-Creates a structured JSON seed for manual upload/testing with MiroFish. It does not pretend that an automatic MiroFish API connection exists.
+```powershell
+.\scripts\stop-studio.ps1
+```
 
-## MiroFish
+## MiroFish boundary
 
-Run MiroFish as a separate service from its official repository. During Phase 1:
+The dashboard generates seed JSON and imports completed reports. Automatic submission is intentionally not claimed until the installed MiroFish backend routes are inspected and tested.
 
-1. Generate the seed through `/mirofish/seed`.
-2. Save the JSON.
-3. Upload/use it manually in MiroFish.
-4. Bring the report back to the control center for structured analysis.
+## Security boundary
 
-Automatic connectivity comes only after the real MiroFish backend routes are inspected and tested.
-
-## Cost boundary
-
-The software in this stack is self-hosted. It avoids mandatory per-request AI charges when using Ollama, but it still consumes local electricity, CPU/GPU, memory, and storage. Optional cloud APIs can be connected later without changing the core architecture.
-
-## Next development steps
-
-1. Add database migrations for workspaces, ideas, projects, simulations, and performance entries.
-2. Add authentication before exposing the service outside localhost.
-3. Add strict JSON schemas for research, scripts, scenes, and quality review.
-4. Connect the React Studio Control Center frontend.
-5. Inspect and implement a tested MiroFish provider.
-6. Add n8n workflows for approved-project rendering only.
+This release is local single-user software. Do not forward or publicly expose the database, Ollama, SearXNG, orchestrator, Node-RED, media-worker, or MiroFish ports.
