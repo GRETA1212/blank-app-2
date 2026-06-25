@@ -1,13 +1,13 @@
 import json
 import os
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from psycopg.types.json import Jsonb
 
 from .ai import OLLAMA_BASE_URL, OLLAMA_MODEL, chat_json, chat_text
