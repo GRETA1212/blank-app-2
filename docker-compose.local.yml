@@ -60,12 +60,17 @@ services:
     container_name: studio-media-worker
     environment:
       OUTPUT_ROOT: /output
+      ASSET_ROOT: /studio-assets
+      VOICE_ROOT: /voices
+      PIPER_DEFAULT_VOICE: ${PIPER_DEFAULT_VOICE:-}
       ESPEAK_VOICE: ${ESPEAK_VOICE:-en-us}
       ESPEAK_RATE: ${ESPEAK_RATE:-155}
     ports:
       - "9000:9000"
     volumes:
       - media_output:/output
+      - studio_assets:/studio-assets:ro
+      - piper_voices:/voices
     restart: unless-stopped
 
   orchestrator:
@@ -79,10 +84,20 @@ services:
       SEARXNG_BASE_URL: http://searxng:8080
       MIROFISH_BASE_URL: ${MIROFISH_BASE_URL:-http://host.docker.internal:5001}
       MEDIA_WORKER_URL: http://media-worker:9000
+      MEDIA_OUTPUT_ROOT: /media-output
       PUBLIC_MEDIA_PREFIX: /media
+      ASSET_ROOT: /studio-assets
+      MAX_ASSET_BYTES: ${MAX_ASSET_BYTES:-524288000}
       LOCAL_USER_EMAIL: ${LOCAL_USER_EMAIL:-local@studio.invalid}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      YOUTUBE_REDIRECT_URI: ${YOUTUBE_REDIRECT_URI:-http://localhost:8000/youtube/oauth/callback}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-}
     ports:
       - "8000:8000"
+    volumes:
+      - studio_assets:/studio-assets
+      - media_output:/media-output:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -126,4 +141,6 @@ volumes:
   postgres_data:
   searxng_data:
   media_output:
+  studio_assets:
+  piper_voices:
   node_red_data:
