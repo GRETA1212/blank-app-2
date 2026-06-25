@@ -52,6 +52,7 @@ export interface ResearchResult {
   content_gaps: Array<{ gap: string; evidence: string; source_ids: string[]; confidence: string }>;
   sources: SourceItem[];
   ideas: ResearchIdea[];
+  [key: string]: unknown;
 }
 
 export interface ScriptPackage {
@@ -71,6 +72,9 @@ export interface Scene {
   onscreen_text: string;
   voice_segment: string;
   asset_notes: string;
+  asset_id?: string | null;
+  fit?: 'cover' | 'contain';
+  motion?: 'none' | 'slow_zoom';
 }
 
 export interface QualityReport {
@@ -112,6 +116,65 @@ export interface ProductionJob {
   started_at?: string | null;
   completed_at?: string | null;
   notice?: string;
+}
+
+export interface MediaAsset {
+  id: string;
+  project_id?: string | null;
+  file_name: string;
+  media_type: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
+  mime_type: string;
+  file_size: number;
+  public_url: string;
+  license_status: 'OWNED' | 'LICENSED' | 'PUBLIC_DOMAIN' | 'UNKNOWN';
+  license_source: string;
+  attribution: string;
+  notes: string;
+  created_at: string;
+}
+
+export interface ApprovalReview {
+  project_id: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  factual_review: boolean;
+  rights_review: boolean;
+  ai_disclosure_review: boolean;
+  audio_review: boolean;
+  visual_review: boolean;
+  subtitle_review: boolean;
+  reviewer_notes: string;
+  decided_at?: string | null;
+}
+
+export interface VoiceOption {
+  id: string;
+  engine: 'piper' | 'espeak-ng';
+  natural: boolean;
+}
+
+export interface VoiceList {
+  voices: VoiceOption[];
+  default: string;
+}
+
+export interface ContentDerivative {
+  id: string;
+  project_id: string;
+  production_job_id: string;
+  kind: 'SHORT' | 'REEL' | 'TIKTOK' | 'THUMBNAIL';
+  variant_label: string;
+  status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  output_url?: string | null;
+  error_message?: string | null;
+}
+
+export interface YouTubeStatus {
+  configured: boolean;
+  connected: boolean;
+  account_id?: string | null;
+  account_name?: string | null;
+  status: string;
+  upload_policy: 'private-only';
 }
 
 export interface PerformanceEntry {
