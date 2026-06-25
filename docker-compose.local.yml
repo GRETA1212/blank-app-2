@@ -31,14 +31,12 @@ services:
     container_name: studio-migrate
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD:-studio_local_password}
+      POSTGRES_DB: ${POSTGRES_DB:-studio}
+      POSTGRES_USER: ${POSTGRES_USER:-studio}
     volumes:
       - ./database/migrations:/migrations:ro
-    command:
-      - /bin/sh
-      - -c
-      - >-
-        psql -h postgres -U ${POSTGRES_USER:-studio} -d ${POSTGRES_DB:-studio}
-        -v ON_ERROR_STOP=1 -f /migrations/001_initial_schema.sql
+      - ./database/run-migrations.sh:/run-migrations.sh:ro
+    command: ["/bin/sh", "/run-migrations.sh"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,6 +54,20 @@ services:
       SEARXNG_BASE_URL: http://localhost:8080/
     restart: unless-stopped
 
+  media-worker:
+    build:
+      context: ./services/media-worker
+    container_name: studio-media-worker
+    environment:
+      OUTPUT_ROOT: /output
+      ESPEAK_VOICE: ${ESPEAK_VOICE:-en-us}
+      ESPEAK_RATE: ${ESPEAK_RATE:-155}
+    ports:
+      - "9000:9000"
+    volumes:
+      - media_output:/output
+    restart: unless-stopped
+
   orchestrator:
     build:
       context: ./services/orchestrator
@@ -66,6 +78,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-studio}:${POSTGRES_PASSWORD:-studio_local_password}@postgres:5432/${POSTGRES_DB:-studio}
       SEARXNG_BASE_URL: http://searxng:8080
       MIROFISH_BASE_URL: ${MIROFISH_BASE_URL:-http://host.docker.internal:5001}
+      MEDIA_WORKER_URL: http://media-worker:9000
+      PUBLIC_MEDIA_PREFIX: /media
       LOCAL_USER_EMAIL: ${LOCAL_USER_EMAIL:-local@studio.invalid}
     ports:
       - "8000:8000"
@@ -75,6 +89,8 @@ services:
       ollama:
         condition: service_started
       searxng:
+        condition: service_started
+      media-worker:
         condition: service_started
     restart: unless-stopped
 
@@ -86,6 +102,8 @@ services:
       - "3000:80"
     depends_on:
       orchestrator:
+        condition: service_started
+      media-worker:
         condition: service_started
     restart: unless-stopped
 
@@ -107,4 +125,5 @@ volumes:
   ollama_data:
   postgres_data:
   searxng_data:
+  media_output:
   node_red_data:
