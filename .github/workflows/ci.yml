@@ -27,6 +27,8 @@ jobs:
 
   media-worker:
     runs-on: ubuntu-latest
+    env:
+      OUTPUT_ROOT: /tmp/studio-media-output
     defaults:
       run:
         working-directory: services/media-worker
