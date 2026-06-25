@@ -21,9 +21,39 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-studio} -d ${POSTGRES_DB:-studio}"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    image: postgres:16-alpine
+    container_name: studio-migrate
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-studio_local_password}
+    volumes:
+      - ./database/migrations:/migrations:ro
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        psql -h postgres -U ${POSTGRES_USER:-studio} -d ${POSTGRES_DB:-studio}
+        -v ON_ERROR_STOP=1 -f /migrations/001_initial_schema.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: studio-searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./services/searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng_data:/var/cache/searxng
+    environment:
+      SEARXNG_BASE_URL: http://localhost:8080/
     restart: unless-stopped
 
   orchestrator:
@@ -34,40 +64,47 @@ services:
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
       DATABASE_URL: postgresql://${POSTGRES_USER:-studio}:${POSTGRES_PASSWORD:-studio_local_password}@postgres:5432/${POSTGRES_DB:-studio}
+      SEARXNG_BASE_URL: http://searxng:8080
       MIROFISH_BASE_URL: ${MIROFISH_BASE_URL:-http://host.docker.internal:5001}
+      LOCAL_USER_EMAIL: ${LOCAL_USER_EMAIL:-local@studio.invalid}
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       ollama:
+        condition: service_started
+      searxng:
         condition: service_started
     restart: unless-stopped
 
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: studio-n8n
-    environment:
-      N8N_HOST: localhost
-      N8N_PORT: 5678
-      N8N_PROTOCOL: http
-      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change-this-local-key}
-      DB_TYPE: postgresdb
-      DB_POSTGRESDB_HOST: postgres
-      DB_POSTGRESDB_PORT: 5432
-      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB:-studio}
-      DB_POSTGRESDB_USER: ${POSTGRES_USER:-studio}
-      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-studio_local_password}
+  frontend:
+    build:
+      context: ./frontend
+    container_name: studio-frontend
     ports:
-      - "5678:5678"
-    volumes:
-      - n8n_data:/home/node/.n8n
+      - "3000:80"
     depends_on:
-      postgres:
-        condition: service_healthy
+      orchestrator:
+        condition: service_started
+    restart: unless-stopped
+
+  node-red:
+    image: nodered/node-red:latest
+    container_name: studio-node-red
+    environment:
+      TZ: ${TZ:-Europe/Skopje}
+    ports:
+      - "1880:1880"
+    volumes:
+      - node_red_data:/data
+    depends_on:
+      orchestrator:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
   ollama_data:
   postgres_data:
-  n8n_data:
+  searxng_data:
+  node_red_data:
