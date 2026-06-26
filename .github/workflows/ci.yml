@@ -10,6 +10,9 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      ASSET_ROOT: /tmp/studio-assets
+      MEDIA_OUTPUT_ROOT: /tmp/studio-media-output
     defaults:
       run:
         working-directory: services/orchestrator
