@@ -1,32 +1,38 @@
 # Studio Control Center
 
-A local-first control center for researching, creating, reviewing, simulating, rendering, and tracking YouTube/TikTok content.
+A local-first control center for researching, creating, reviewing, translating, rendering, and tracking YouTube/TikTok content.
 
-The project is designed to run on your own computer with open-source or locally hosted components, so there is no mandatory per-request AI subscription.
+The system runs on your own computer with open-source or locally hosted services, so there is no mandatory per-request AI subscription.
 
 ## What works
 
 - Current public-web research through self-hosted SearXNG
 - Evidence, inference, and creative-hypothesis separation
 - Five sourced content ideas per research run
-- Local script generation through Ollama
-- Local scene-plan generation
+- Local script and scene-plan generation through Ollama
 - Originality-risk and quality review
 - PostgreSQL project and pipeline storage
-- Manual pipeline stages from Queue to Published
+- English, Italian, Albanian, and Macedonian content variants
+- Separate human approval for every language
+- Piper neural voice installation and preview
+- Macedonian eSpeak NG fallback
+- Voice speed control
+- faster-whisper transcription of the generated audio
+- Timestamped SRT subtitles built from the actual audio
+- Transcript-to-script similarity checks
+- Local FFmpeg MP4 rendering
+- Asset-rights tracking and approval review
 - Manual MiroFish seed export and report import
-- Structured synthetic-audience findings
-- Local MP4 draft rendering with FFmpeg
-- Local speech with eSpeak NG
-- SRT subtitle generation from the approved narration
 - Manual verified performance and revenue logging
 - Node-RED webhook flow for draft production
 
 ## Important boundaries
 
+- Generated translations require human linguistic and factual review.
+- Transcript matching is a quality-control aid, not a pronunciation guarantee.
+- Piper voice models have separate model cards and licences; review them before commercial distribution.
 - MiroFish findings are synthetic-agent simulations, not real audience measurements.
 - The quality gate is not guaranteed plagiarism detection.
-- The first renderer creates useful draft videos with placeholder title cards. Replace them with original or properly licensed visuals before publishing.
 - Revenue is never inferred from views.
 - Publishing remains manual.
 - This version is local single-user software. Do not expose its service ports publicly.
@@ -40,11 +46,14 @@ React Studio Control Center
         |       +-- PostgreSQL
         |       +-- Ollama
         |       +-- SearXNG
+        |       +-- Language variants
         |       +-- MiroFish manual bridge
-        |       +-- Local media worker
+        |       +-- Media worker
+        |              +-- Piper / eSpeak
+        |              +-- faster-whisper
+        |              +-- FFmpeg
         |
         +-- Node-RED automation
-                +-- quality-approved render webhook
 ```
 
 ## Requirements
@@ -53,11 +62,9 @@ React Studio Control Center
 - Docker Desktop
 - Git
 - 16 GB RAM recommended for `qwen3:8b`
-- More RAM or a supported GPU improves local-model speed
+- More RAM or a supported GPU improves local-model and transcription speed
 
 ## Start on Windows
-
-Clone the repository and switch to the feature branch while the pull request is under review:
 
 ```powershell
 git clone https://github.com/GRETA1212/blank-app-2.git
@@ -66,13 +73,9 @@ git switch feature/local-ai-studio
 powershell -ExecutionPolicy Bypass -File .\scripts\start-studio.ps1
 ```
 
-The startup script:
+The startup script creates `.env`, builds the containers, starts all services, downloads the configured Ollama model, and opens the dashboard.
 
-1. Creates `.env` from the safe template when needed.
-2. Builds all containers.
-3. Starts PostgreSQL, migrations, SearXNG, Ollama, FastAPI, the React frontend, Node-RED, and the media worker.
-4. Downloads the configured Ollama model.
-5. Opens the dashboard.
+On first use, configured Piper voices and the selected Whisper model may also download. These files remain in Docker volumes for later runs.
 
 ## Service addresses
 
@@ -93,21 +96,38 @@ The startup script:
 .\scripts\stop-studio.ps1
 ```
 
-Stopping containers does not delete projects, models, or generated media. Those remain in Docker volumes.
+Stopping containers does not delete projects, models, voices, transcripts, or generated media.
 
-## First workflow
+## Main workflow
 
 1. Open **Research** and enter a focused topic and audience.
-2. Review every source and select one idea.
-3. Click **Send to Create**.
-4. Add your real expertise and generate the script.
-5. Edit the title, hook, narration, and description.
-6. Generate the scene plan.
-7. Run the originality-risk and quality review.
-8. Save the project to the pipeline.
-9. Use **Render drafts** to generate a local MP4 and SRT.
-10. Review the output before moving the project to Published.
-11. Enter real platform metrics in Performance.
+2. Review the sources and send one idea to **Create**.
+3. Add your real expertise and generate the script.
+4. Edit the title, hook, narration, description, and scenes.
+5. Run the originality-risk and quality review.
+6. Save the project to the pipeline.
+7. Open **Languages** to generate English, Italian, Albanian, and Macedonian variants.
+8. Review and approve each language separately.
+9. Open **Audio studio**.
+10. Choose the master or an approved language variant.
+11. Install or preview the selected local voice.
+12. Render the MP4. Whisper transcribes the actual audio and generates the SRT.
+13. Review the transcript similarity report, subtitles, audio, visuals, rights, and disclosures.
+14. Publish manually and enter verified metrics in Performance.
+
+## Language and audio configuration
+
+```env
+PIPER_AUTO_DOWNLOAD=true
+PIPER_AUTO_VOICES=en_US-lessac-medium,it_IT-paola-medium,sq_AL-edon-medium
+PIPER_DEFAULT_VOICE=en_US-lessac-medium
+WHISPER_MODEL=small
+WHISPER_DEVICE=cpu
+WHISPER_COMPUTE_TYPE=int8
+SUBTITLE_VERIFY_THRESHOLD=0.82
+```
+
+See `docs/AUDIO_LANGUAGES.md` for the detailed language, voice, and transcript workflow.
 
 ## Node-RED flow
 
@@ -117,7 +137,7 @@ Import:
 automation/node-red/studio-flow.json
 ```
 
-The flow creates:
+The flow exposes:
 
 ```text
 POST http://localhost:1880/studio/render
@@ -131,29 +151,30 @@ Payload:
 }
 ```
 
-The orchestrator still enforces the passing quality-review requirement.
+The orchestrator still enforces the quality-review requirement.
 
 ## MiroFish
 
-MiroFish runs separately. This project currently supports the safest first integration:
+MiroFish runs separately. The current safe integration is:
 
 1. Generate a seed JSON in Audience Simulation.
-2. Download or copy it.
-3. Run the simulation in your MiroFish installation.
-4. Paste the completed report back into the dashboard.
-5. Let local AI structure the findings.
+2. Run it in the installed MiroFish application.
+3. Paste the completed report back into the dashboard.
+4. Let local AI structure the findings.
 
-Automatic MiroFish submission should only be added after the real backend routes are tested against the installed version.
+Automatic submission is not claimed until the installed backend routes are tested.
 
-## Data and media
+## Persistent data
 
 Docker volumes store:
 
 - PostgreSQL data
 - Ollama models
+- Piper voices
+- Whisper models
 - SearXNG cache
 - Node-RED configuration
-- Generated MP4/SRT drafts
+- generated audio, transcripts, subtitles, and videos
 
 To permanently remove all local data:
 
@@ -185,13 +206,8 @@ uvicorn app.entrypoint:app --reload --port 8000
 
 ## Validation
 
-GitHub Actions checks:
-
-- Python compilation and FastAPI imports
-- React TypeScript production build
-- Media-worker compilation
-- Docker Compose configuration
+GitHub Actions checks Python compilation/imports, unit tests, the React TypeScript production build, and Docker Compose configuration.
 
 ## Licensing
 
-See `OPEN_SOURCE_STACK.md`. Application dependencies and AI/media models have separate licences. Verify model, voice, image, and dataset licences before commercial redistribution.
+See `OPEN_SOURCE_STACK.md`. Application dependencies, AI models, voice models, images, and datasets have separate licences that must be reviewed before commercial redistribution.
