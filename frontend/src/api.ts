@@ -2,6 +2,9 @@ import type {
   ApprovalReview,
   ContentDerivative,
   Health,
+  LanguageCode,
+  LanguageOption,
+  LocalizedVariant,
   MediaAsset,
   OverviewData,
   PerformanceEntry,
@@ -52,6 +55,13 @@ export const api = {
   updateProject: (id: string, payload: Partial<Project>) => request<Project>(`/projects/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteProject: (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' }),
 
+  languages: () => request<{ languages: LanguageOption[]; notice: string }>('/localization/languages'),
+  variants: (projectId?: string) => request<LocalizedVariant[]>(`/localization/variants${projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''}`),
+  generateVariants: (projectId: string, payload: { languages: LanguageCode[]; glossary: Record<string, string>; overwrite: boolean }) =>
+    request<{ variants: LocalizedVariant[]; notice: string }>(`/localization/projects/${projectId}/generate`, { method: 'POST', body: JSON.stringify(payload) }),
+  updateVariant: (variantId: string, payload: Partial<LocalizedVariant>) =>
+    request<LocalizedVariant>(`/localization/variants/${variantId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+
   assets: (projectId?: string) => request<MediaAsset[]>(`/assets${projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''}`),
   uploadAsset: (form: FormData) => request<MediaAsset>('/assets', { method: 'POST', body: form }),
   deleteAsset: (id: string) => request<void>(`/assets/${id}`, { method: 'DELETE' }),
@@ -59,6 +69,13 @@ export const api = {
   productionJobs: () => request<ProductionJob[]>('/production/jobs'),
   renderProject: (id: string, options: { aspect_ratio: '16:9' | '9:16'; voice_id?: string | null; burn_subtitles: boolean }) =>
     request<ProductionJob>(`/production/jobs/${id}`, { method: 'POST', body: JSON.stringify(options) }),
+  enhancedVoices: (languageCode?: LanguageCode) =>
+    request<VoiceList>(`/production/audio/voices${languageCode ? `?language_code=${encodeURIComponent(languageCode)}` : ''}`),
+  installVoice: (voiceId: string) => request(`/production/audio/voices/${encodeURIComponent(voiceId)}/install`, { method: 'POST' }),
+  previewEnhancedVoice: (payload: { text: string; language_code: LanguageCode; voice_id?: string | null; speed: number }) =>
+    request<{ audio_url: string; voice_engine: string; voice_id: string; language_code: LanguageCode }>('/production/audio/voice-preview', { method: 'POST', body: JSON.stringify(payload) }),
+  renderEnhanced: (projectId: string, payload: { aspect_ratio: '16:9' | '9:16'; content_variant_id?: string | null; language_code?: LanguageCode; voice_id?: string | null; voice_speed: number; burn_subtitles: boolean; verify_subtitles: boolean }) =>
+    request<ProductionJob>(`/production/audio/jobs/${projectId}`, { method: 'POST', body: JSON.stringify(payload) }),
   derivatives: (projectId?: string) => request<ContentDerivative[]>(`/production/derivatives${projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''}`),
   generateShorts: (jobId: string, payload: { count: number; duration_seconds: number }) =>
     request<{ derivatives: ContentDerivative[] }>(`/production/jobs/${jobId}/shorts`, { method: 'POST', body: JSON.stringify(payload) }),
