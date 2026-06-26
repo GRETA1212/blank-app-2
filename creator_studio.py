@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any
-import re
 
 
 @dataclass(frozen=True)
@@ -74,24 +74,28 @@ SEED_CHARACTERS: dict[str, CharacterProfile] = {
 
 LANGUAGE_COPY: dict[str, dict[str, str]] = {
     "English": {
+        "generic_hook": "Most people miss this important detail about {topic}.",
         "setup": "Here is what most people miss about {topic}.",
         "development": "At first it looks simple, but one detail changes the result.",
         "payoff": "The useful part is not the trend itself; it is knowing when and why it works.",
         "cta": "Would you try this? Follow for the next test.",
     },
     "Italian": {
+        "generic_hook": "Quasi tutti ignorano questo dettaglio importante su {topic}.",
         "setup": "Ecco cosa quasi tutti ignorano su {topic}.",
         "development": "All'inizio sembra semplice, ma un dettaglio cambia completamente il risultato.",
         "payoff": "La parte utile non è solo la tendenza: è capire quando e perché funziona.",
         "cta": "Lo proveresti? Seguimi per il prossimo test.",
     },
     "Albanian": {
+        "generic_hook": "Shumica nuk e vëren këtë detaj të rëndësishëm te {topic}.",
         "setup": "Ja çfarë shumica nuk vëren te {topic}.",
         "development": "Në fillim duket e thjeshtë, por një detaj e ndryshon të gjithë rezultatin.",
         "payoff": "Vlera nuk është vetëm te trendi, por te kuptimi se kur dhe pse funksionon.",
         "cta": "A do ta provoje? Ndiq për testin tjetër.",
     },
     "Macedonian": {
+        "generic_hook": "Повеќето луѓе не го забележуваат овој важен детаљ кај {topic}.",
         "setup": "Еве што повеќето луѓе не го забележуваат кај {topic}.",
         "development": "На почеток изгледа едноставно, но еден детаљ го менува целиот резултат.",
         "payoff": "Вредноста не е само во трендот, туку во тоа да знаеш кога и зошто функционира.",
@@ -127,12 +131,19 @@ def slugify(value: str) -> str:
     return value.strip("-") or "video"
 
 
+def _select_hook(profile: CharacterProfile, topic: str, language: str) -> str:
+    niche_hooks = NICHE_HOOKS.get(profile.niche)
+    if niche_hooks:
+        return niche_hooks.get(language, niche_hooks["English"])
+    return LANGUAGE_COPY[language]["generic_hook"].format(topic=topic)
+
+
 def _hashtags(profile: CharacterProfile, topic: str, platform: str) -> list[str]:
     base = {
         "Beauty": ["beautytips", "makeuptips", "virtualcreator", "beautyvideo"],
         "Real Estate": ["realestate", "hometour", "property", "virtualcreator"],
         "Mini Movies": ["minimovie", "storytime", "mystery", "aistory"],
-    }.get(profile.niche, ["creator", "shortvideo"])
+    }.get(profile.niche, [slugify(profile.niche).replace("-", ""), "virtualcreator", "shortvideo"])
     topic_tag = slugify(topic).replace("-", "")[:24]
     platform_tag = "shorts" if "YouTube" in platform else "tiktok"
     return [f"#{tag}" for tag in [*base, topic_tag, platform_tag] if tag]
@@ -148,9 +159,7 @@ def generate_video_plan(
 ) -> dict[str, Any]:
     language = language if language in LANGUAGE_COPY else "English"
     copy = LANGUAGE_COPY[language]
-    hook = NICHE_HOOKS.get(profile.niche, NICHE_HOOKS["Mini Movies"]).get(
-        language, NICHE_HOOKS[profile.niche]["English"]
-    )
+    hook = _select_hook(profile, topic, language)
 
     if profile.niche == "Mini Movies":
         setup = copy["setup"].format(topic=topic)
@@ -162,7 +171,7 @@ def generate_video_plan(
             "She follows the warning, but the final frame reveals that the person sending it "
             "is standing behind her."
         )
-        cta = "Should Luna turn around or run? The most-liked choice becomes the next episode."
+        cta = f"Should {profile.name} turn around or run? The most-liked choice becomes the next episode."
     else:
         setup = copy["setup"].format(topic=topic)
         development = copy["development"]
@@ -198,11 +207,12 @@ def generate_video_plan(
 
     hashtags = _hashtags(profile, topic, platform)
     caption = f"{hook} {cta} {' '.join(hashtags)}"
-    project_id = f"{slugify(profile.name)}-{slugify(topic)}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+    timestamp = datetime.now(timezone.utc)
+    project_id = f"{slugify(profile.name)}-{slugify(topic)}-{timestamp.strftime('%Y%m%d%H%M%S')}"
 
     return {
         "project_id": project_id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": timestamp.isoformat(),
         "character": asdict(profile),
         "topic": topic,
         "language": language,
