@@ -1,0 +1,44 @@
+name: Diagnostic Artifacts
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    env:
+      ASSET_ROOT: /tmp/studio-assets
+      MEDIA_OUTPUT_ROOT: /tmp/studio-media-output
+      OUTPUT_ROOT: /tmp/studio-output
+      VOICE_ROOT: /tmp/studio-voices
+      WHISPER_ROOT: /tmp/studio-whisper
+      PIPER_AUTO_DOWNLOAD: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Frontend diagnostics
+        working-directory: frontend
+        continue-on-error: true
+        run: npm install --silent && npm run build > ../frontend-diagnostic.txt 2>&1
+      - name: Backend diagnostics
+        working-directory: services/orchestrator
+        continue-on-error: true
+        run: pip install -q -r requirements-dev.txt && pytest -q > ../../backend-diagnostic.txt 2>&1
+      - name: Media diagnostics
+        working-directory: services/media-worker
+        continue-on-error: true
+        run: pip install -q -r requirements-dev.txt && pytest -q > ../../media-diagnostic.txt 2>&1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: studio-diagnostics
+          path: |
+            frontend-diagnostic.txt
+            backend-diagnostic.txt
+            media-diagnostic.txt
