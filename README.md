@@ -1,6 +1,6 @@
 # Virtual Creator Money Studio
 
-A Streamlit MVP for building and testing a network of virtual creators.
+A Streamlit system for creating, testing and scaling a network of fictional virtual creators.
 
 The first three creator brands are:
 
@@ -8,58 +8,73 @@ The first three creator brands are:
 - **Elena** — real estate and property
 - **Luna** — episodic mini-movies
 
-The studio is designed around one rule: measure **retention, follower conversion and profit**, not views alone.
+The studio measures **retention, follower conversion and profit**, not views alone.
 
-## Current features
+## Current modules
 
 ### Money Studio
 
-- character bibles for consistent identities
-- add custom virtual creators
-- create a complete video production plan
-- generate hooks, script sections, scenes, captions and hashtags
-- download a production package as JSON
-- record published-video performance
-- calculate a growth score
-- receive a scale / optimize / pause recommendation
-- simulate TikTok and YouTube Shorts revenue using editable RPM assumptions
-- track affiliate, sponsor, lead and production-cost inputs
-- follow a practical 30-day launch plan
+- character bibles and custom-character creation
+- complete video planning with hooks, scripts, scenes, captions and hashtags
+- downloadable production packages
+- Viral Test Lab for retention, completion, shares, followers, cost and profit
+- SCALE / OPTIMIZE / PAUSE recommendations
+- TikTok and YouTube Shorts revenue simulator with editable assumptions
+- 30-day launch plan
 
 ### Character Lab
 
-The Streamlit sidebar now includes a separate **Character Lab** page with:
-
 - detailed appearance DNA for Sofia, Elena and Luna
 - permanent eye, hair, face, signature-item and color-palette rules
-- editable personality, gestures, habits and catchphrases
+- personality, gestures, habits, boundaries and catchphrases
 - named reference-image slots for multiple angles and expressions
 - local reference-image and licensed voice-sample storage
-- persistent character profiles under `storage/characters/`
-- voice language, accent, pitch, pace, emotion and provider settings
-- explicit voice-rights confirmation before saving provider IDs or samples
-- recurring wardrobe, location and action libraries
-- scene direction for visual generation, acting, voice and camera
+- persistent profiles under `storage/characters/`
+- voice language, accent, pitch, pace, emotional modes and provider IDs
+- wardrobe, location and physical-action libraries
+- visual, acting, voice and camera direction
 - negative prompts and continuity checks
-- a pre-publish consistency gate that approves, requests fixes or rejects a scene
-- downloadable Character DNA and scene packages as JSON
+- pre-publish consistency gate
 
-Local character media and profiles are ignored by Git so private reference assets are not accidentally committed.
+### Reality Pipeline
 
-## Important limitation
+The new **Reality Pipeline** implements the recommended high-realism workflow:
 
-The application does **not** yet generate or publish the final MP4.
+```text
+consenting human performance
+→ fictional/authorized identity transfer
+→ licensed voice and lip sync
+→ sound design
+→ shot-level quality control
+→ 1080 × 1920 MP4 assembly
+```
 
-The next engineering milestone is:
+It includes:
 
-1. connect an image/video generation provider to the Character DNA
-2. connect a licensed voice provider
-3. generate timed narration and subtitles
-4. add FFmpeg vertical-video rendering
-5. add a render and human-approval queue
-6. connect official publishing APIs only after quality is reliable
+- project-level actor, face, voice and media-rights gates
+- AI-disclosure tracking
+- upload and local storage for consenting performance footage
+- approved master-identity and licensed voice references
+- five short, controllable shot templates for each character
+- editable dialogue, emotion, action, location, wardrobe and camera direction
+- provider-neutral manifests containing Character DNA and shot prompts
+- automatically generated SRT subtitles
+- downloadable production ZIPs
+- upload slots for approved generated/identity-transferred shot clips
+- optional final narration/audio mix
+- FFmpeg normalization and assembly to a 1080 × 1920 MP4
+- burned-in subtitles
+- a strict Reality Gate for face, skin, motion, hands, lip sync, lighting, world continuity, audio, facts, rights and disclosure
 
-Manual publishing is intentional during the test phase so broken, repetitive or inaccurate content is not posted automatically.
+Private performance footage, identity references, voices and renders are stored under `storage/` and ignored by Git.
+
+## What the application does not yet do
+
+The application does not currently call a commercial image-to-video, identity-transfer, digital-twin, voice or lip-sync provider automatically.
+
+It creates the complete provider handoff, accepts the approved returned shot clips, and assembles the final video locally. Provider integrations require the user's own accounts, API credentials, provider terms and consent-compliant workflow.
+
+Automatic posting is intentionally excluded until content quality and account safety are proven.
 
 ## Run locally on Windows
 
@@ -74,15 +89,30 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-Open the local address shown by Streamlit, normally:
+Open the address shown by Streamlit, normally:
 
 ```text
 http://localhost:8501
 ```
 
-Use the Streamlit sidebar to switch between the main studio and **Character Lab**.
+Use the Streamlit sidebar to open:
 
-## Pull this branch into an existing clone
+- Character Lab
+- Reality Pipeline
+
+## FFmpeg requirement
+
+The final MP4 assembly step requires FFmpeg to be installed and available on the Windows `PATH`.
+
+Verify it in PowerShell:
+
+```powershell
+ffmpeg -version
+```
+
+Restart the terminal after installing or changing the `PATH`, then restart Streamlit.
+
+## Pull the latest branch into an existing clone
 
 ```powershell
 git fetch origin
@@ -96,30 +126,36 @@ git pull origin feature/virtual-creator-studio
 pytest -q
 ```
 
-The Character Lab unit tests cover:
+Tests cover:
 
-- default identity completeness
-- profile persistence
-- safe reference-image storage
-- file validation
+- character identity completeness and persistence
+- safe local asset storage
 - performable scene packages
-- consistency-gate decisions
+- rights and consent blocking
+- short-shot realism plans
+- SRT timing
+- production ZIP generation
+- Reality Gate decisions
+- money and growth calculations
 
-## First real-world experiment
+## First ultra-real pilot
 
-1. Open **Character Lab**.
-2. Review Sofia, Elena and Luna's Identity DNA.
-3. Upload approved face angles and expression references.
-4. Configure only licensed synthetic voices or consenting actor voices.
-5. Create one directed scene for each character.
-6. Produce and publish three pilot videos per character.
-7. Record the 72-hour results in **Viral Test Lab**.
+1. Open **Character Lab** and approve Sofia's permanent face, voice, wardrobe and gestures.
+2. Open **Reality Pipeline**.
+3. Create a Sofia project and confirm all rights.
+4. Record a consenting performer completing the five short actions.
+5. Upload the master identity and licensed voice reference.
+6. Export the provider package.
+7. Generate or identity-transfer each shot with an authorized provider.
+8. Upload only approved shot clips.
+9. Add the licensed narration/audio mix.
+10. Render the vertical MP4 with FFmpeg.
+11. Pass every Reality Gate check before publishing.
+12. Record the 72-hour results in Viral Test Lab.
 
-Do not expand to 20 characters until at least one of the first three has a repeatable winning format.
+Do not expand to 20 characters until one character has a repeatable, high-quality production workflow and measurable audience response.
 
 ## Repository branch
-
-Development work is currently on:
 
 ```text
 feature/virtual-creator-studio
