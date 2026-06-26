@@ -12,6 +12,8 @@ The studio is designed around one rule: measure **retention, follower conversion
 
 ## Current features
 
+### Money Studio
+
 - character bibles for consistent identities
 - add custom virtual creators
 - create a complete video production plan
@@ -24,19 +26,38 @@ The studio is designed around one rule: measure **retention, follower conversion
 - track affiliate, sponsor, lead and production-cost inputs
 - follow a practical 30-day launch plan
 
+### Character Lab
+
+The Streamlit sidebar now includes a separate **Character Lab** page with:
+
+- detailed appearance DNA for Sofia, Elena and Luna
+- permanent eye, hair, face, signature-item and color-palette rules
+- editable personality, gestures, habits and catchphrases
+- named reference-image slots for multiple angles and expressions
+- local reference-image and licensed voice-sample storage
+- persistent character profiles under `storage/characters/`
+- voice language, accent, pitch, pace, emotion and provider settings
+- explicit voice-rights confirmation before saving provider IDs or samples
+- recurring wardrobe, location and action libraries
+- scene direction for visual generation, acting, voice and camera
+- negative prompts and continuity checks
+- a pre-publish consistency gate that approves, requests fixes or rejects a scene
+- downloadable Character DNA and scene packages as JSON
+
+Local character media and profiles are ignored by Git so private reference assets are not accidentally committed.
+
 ## Important limitation
 
-This is Phase 1. It does **not** yet generate or publish the final MP4.
+The application does **not** yet generate or publish the final MP4.
 
-The next milestone will add:
+The next engineering milestone is:
 
-1. character reference-image storage
-2. image/video asset generation providers
-3. voice generation providers
-4. subtitles
-5. FFmpeg vertical-video rendering
-6. a human approval queue
-7. official publishing integrations later
+1. connect an image/video generation provider to the Character DNA
+2. connect a licensed voice provider
+3. generate timed narration and subtitles
+4. add FFmpeg vertical-video rendering
+5. add a render and human-approval queue
+6. connect official publishing APIs only after quality is reliable
 
 Manual publishing is intentional during the test phase so broken, repetitive or inaccurate content is not posted automatically.
 
@@ -59,6 +80,8 @@ Open the local address shown by Streamlit, normally:
 http://localhost:8501
 ```
 
+Use the Streamlit sidebar to switch between the main studio and **Character Lab**.
+
 ## Pull this branch into an existing clone
 
 ```powershell
@@ -73,15 +96,24 @@ git pull origin feature/virtual-creator-studio
 pytest -q
 ```
 
+The Character Lab unit tests cover:
+
+- default identity completeness
+- profile persistence
+- safe reference-image storage
+- file validation
+- performable scene packages
+- consistency-gate decisions
+
 ## First real-world experiment
 
-Create and publish:
-
-- 3 Sofia videos
-- 3 Elena videos
-- 3 Luna videos
-
-Record the results after 72 hours in **Viral Test Lab**. The program will compare the characters using retention, completion rate, shares, followers gained and profit.
+1. Open **Character Lab**.
+2. Review Sofia, Elena and Luna's Identity DNA.
+3. Upload approved face angles and expression references.
+4. Configure only licensed synthetic voices or consenting actor voices.
+5. Create one directed scene for each character.
+6. Produce and publish three pilot videos per character.
+7. Record the 72-hour results in **Viral Test Lab**.
 
 Do not expand to 20 characters until at least one of the first three has a repeatable winning format.
 
