@@ -6,6 +6,8 @@ export type ProjectStatus =
   | 'REVIEW'
   | 'PUBLISHED';
 
+export type LanguageCode = 'en' | 'it' | 'sq' | 'mk';
+
 export interface Health {
   status: string;
   database: boolean;
@@ -103,19 +105,69 @@ export interface Project {
   published_at?: string | null;
 }
 
+export interface LanguageOption {
+  code: LanguageCode;
+  name: string;
+  default_voice_id: string;
+}
+
+export interface LocalizedVariant {
+  id: string;
+  project_id: string;
+  language_code: LanguageCode;
+  language_name: string;
+  title: string;
+  hook: string;
+  narration: string;
+  description: string;
+  hashtags: string[];
+  scenes: Scene[];
+  voice_id?: string | null;
+  translation_notes: string;
+  review_status: 'NEEDS_REVIEW' | 'APPROVED' | 'REJECTED';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubtitleVerification {
+  passed?: boolean;
+  similarity?: number | null;
+  threshold?: number;
+  detected_language?: string;
+  language_probability?: number;
+  segment_count?: number;
+  missing_words_sample?: string[];
+  unexpected_words_sample?: string[];
+  warning?: string;
+}
+
 export interface ProductionJob {
   id: string;
   project_id: string;
   project_title?: string;
+  content_variant_id?: string | null;
+  variant_language_name?: string | null;
+  variant_title?: string | null;
+  language_code?: LanguageCode | null;
+  voice_id?: string | null;
+  voice_engine?: string | null;
   status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   worker: string;
   output_url?: string | null;
   subtitle_url?: string | null;
+  transcript_url?: string | null;
+  subtitle_verification?: SubtitleVerification;
   error_message?: string | null;
   created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
   notice?: string;
+  renderer?: {
+    subtitle_verification?: SubtitleVerification;
+    voice_engine?: string;
+    voice_id?: string;
+    language_code?: LanguageCode;
+  };
 }
 
 export interface MediaAsset {
@@ -148,13 +200,20 @@ export interface ApprovalReview {
 
 export interface VoiceOption {
   id: string;
+  display_name: string;
+  language_code: LanguageCode;
   engine: 'piper' | 'espeak-ng';
   natural: boolean;
+  recommended: boolean;
+  installed: boolean;
+  model_source: string;
+  license_review_required: boolean;
 }
 
 export interface VoiceList {
   voices: VoiceOption[];
-  default: string;
+  defaults: Record<LanguageCode, string>;
+  notice: string;
 }
 
 export interface ContentDerivative {
