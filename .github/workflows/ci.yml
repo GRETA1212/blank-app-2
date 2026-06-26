@@ -1,0 +1,65 @@
+name: Studio Control Center CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feature/local-ai-studio]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/orchestrator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-dev.txt
+      - run: python -m compileall app
+      - run: python -c "from app.entrypoint import app; assert app.title == 'Studio Orchestrator'"
+      - run: pytest -q
+
+  media-worker:
+    runs-on: ubuntu-latest
+    env:
+      OUTPUT_ROOT: /tmp/studio-output
+      VOICE_ROOT: /tmp/studio-voices
+      ASSET_ROOT: /tmp/studio-assets
+      WHISPER_ROOT: /tmp/studio-whisper
+      PIPER_AUTO_DOWNLOAD: 'false'
+    defaults:
+      run:
+        working-directory: services/media-worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-dev.txt
+      - run: python -m compileall app
+      - run: python -c "from app.entrypoint import app; assert app.title == 'Studio Media Worker'"
+      - run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npm run build
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.local.example .env
+      - run: docker compose -f docker-compose.local.yml config
