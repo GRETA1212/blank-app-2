@@ -1,0 +1,155 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: studio-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: studio-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-studio}
+      POSTGRES_USER: ${POSTGRES_USER:-studio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studio_local_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-studio} -d ${POSTGRES_DB:-studio}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    image: postgres:16-alpine
+    container_name: studio-migrate
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-studio_local_password}
+      POSTGRES_DB: ${POSTGRES_DB:-studio}
+      POSTGRES_USER: ${POSTGRES_USER:-studio}
+    volumes:
+      - ./database/migrations:/migrations:ro
+      - ./database/run-migrations.sh:/run-migrations.sh:ro
+    command: ["/bin/sh", "/run-migrations.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: studio-searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./services/searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng_data:/var/cache/searxng
+    environment:
+      SEARXNG_BASE_URL: http://localhost:8080/
+    restart: unless-stopped
+
+  media-worker:
+    build:
+      context: ./services/media-worker
+    container_name: studio-media-worker
+    environment:
+      OUTPUT_ROOT: /output
+      ASSET_ROOT: /studio-assets
+      VOICE_ROOT: /voices
+      WHISPER_ROOT: /models/whisper
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
+      SUBTITLE_VERIFY_THRESHOLD: ${SUBTITLE_VERIFY_THRESHOLD:-0.82}
+      PIPER_AUTO_DOWNLOAD: ${PIPER_AUTO_DOWNLOAD:-true}
+      PIPER_AUTO_VOICES: ${PIPER_AUTO_VOICES:-en_US-lessac-medium,it_IT-paola-medium,sq_AL-edon-medium}
+      PIPER_DEFAULT_VOICE: ${PIPER_DEFAULT_VOICE:-en_US-lessac-medium}
+      ESPEAK_VOICE: ${ESPEAK_VOICE:-en-us}
+      ESPEAK_RATE: ${ESPEAK_RATE:-155}
+    ports:
+      - "9000:9000"
+    volumes:
+      - media_output:/output
+      - studio_assets:/studio-assets:ro
+      - piper_voices:/voices
+      - whisper_models:/models/whisper
+    restart: unless-stopped
+
+  orchestrator:
+    build:
+      context: ./services/orchestrator
+    container_name: studio-orchestrator
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-studio}:${POSTGRES_PASSWORD:-studio_local_password}@postgres:5432/${POSTGRES_DB:-studio}
+      SEARXNG_BASE_URL: http://searxng:8080
+      MIROFISH_BASE_URL: ${MIROFISH_BASE_URL:-http://host.docker.internal:5001}
+      MEDIA_WORKER_URL: http://media-worker:9000
+      MEDIA_OUTPUT_ROOT: /media-output
+      PUBLIC_MEDIA_PREFIX: /media
+      ASSET_ROOT: /studio-assets
+      MAX_ASSET_BYTES: ${MAX_ASSET_BYTES:-524288000}
+      LOCAL_USER_EMAIL: ${LOCAL_USER_EMAIL:-local@studio.invalid}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      YOUTUBE_REDIRECT_URI: ${YOUTUBE_REDIRECT_URI:-http://localhost:8000/youtube/oauth/callback}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - studio_assets:/studio-assets
+      - media_output:/media-output:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_started
+      searxng:
+        condition: service_started
+      media-worker:
+        condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: studio-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      orchestrator:
+        condition: service_started
+      media-worker:
+        condition: service_started
+    restart: unless-stopped
+
+  node-red:
+    image: nodered/node-red:latest
+    container_name: studio-node-red
+    environment:
+      TZ: ${TZ:-Europe/Skopje}
+    ports:
+      - "1880:1880"
+    volumes:
+      - node_red_data:/data
+    depends_on:
+      orchestrator:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  postgres_data:
+  searxng_data:
+  media_output:
+  studio_assets:
+  piper_voices:
+  whisper_models:
+  node_red_data:

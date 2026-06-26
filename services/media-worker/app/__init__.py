@@ -1,0 +1,1 @@
+"""Local media rendering worker."""
