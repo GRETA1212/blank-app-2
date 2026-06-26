@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@xyflow/react/dist/style.css';
 import './styles.css';
 import './production.css';
+import './localization-min.css';
 import App from './App';
 import LocalizationLauncher from './LocalizationLauncher';
 import ProductionLauncher from './ProductionLauncher';
