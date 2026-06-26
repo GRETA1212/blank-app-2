@@ -29,9 +29,12 @@ This project intentionally prefers reusable open-source components over propriet
 ## Media pipeline
 
 - FFmpeg — LGPL/GPL depending on build configuration
-- eSpeak NG — GPL-3.0
+- Piper engine (`piper-tts`) — GPL-3.0
+- Piper voice models — each model has its own model card and licence; review before commercial distribution
+- faster-whisper — MIT
+- Whisper model weights — MIT
+- eSpeak NG fallback — GPL-3.0
 - Pillow — HPND
-- Optional future components such as Piper, Whisper, or ComfyUI require separate code and model-licence review before inclusion
 
 ## Licensing rules
 
