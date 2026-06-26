@@ -62,7 +62,14 @@ services:
       OUTPUT_ROOT: /output
       ASSET_ROOT: /studio-assets
       VOICE_ROOT: /voices
-      PIPER_DEFAULT_VOICE: ${PIPER_DEFAULT_VOICE:-}
+      WHISPER_ROOT: /models/whisper
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
+      SUBTITLE_VERIFY_THRESHOLD: ${SUBTITLE_VERIFY_THRESHOLD:-0.82}
+      PIPER_AUTO_DOWNLOAD: ${PIPER_AUTO_DOWNLOAD:-true}
+      PIPER_AUTO_VOICES: ${PIPER_AUTO_VOICES:-en_US-lessac-medium,it_IT-paola-medium,sq_AL-edon-medium}
+      PIPER_DEFAULT_VOICE: ${PIPER_DEFAULT_VOICE:-en_US-lessac-medium}
       ESPEAK_VOICE: ${ESPEAK_VOICE:-en-us}
       ESPEAK_RATE: ${ESPEAK_RATE:-155}
     ports:
@@ -71,6 +78,7 @@ services:
       - media_output:/output
       - studio_assets:/studio-assets:ro
       - piper_voices:/voices
+      - whisper_models:/models/whisper
     restart: unless-stopped
 
   orchestrator:
@@ -143,4 +151,5 @@ volumes:
   media_output:
   studio_assets:
   piper_voices:
+  whisper_models:
   node_red_data:
