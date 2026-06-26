@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [feature/local-ai-studio]
+  pull_request:
+    branches: [main]
 
 jobs:
   frontend:
