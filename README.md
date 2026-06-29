@@ -1,108 +1,183 @@
 # Virtual Creator Money Studio
 
-A Streamlit system for creating, testing and scaling a network of fictional virtual creators.
+A Streamlit operating system for planning, producing, publishing and measuring fictional virtual creators.
 
-The first three creator brands are:
+The first creator brands are:
 
 - **Sofia** — beauty and makeup
 - **Elena** — real estate and property
 - **Luna** — episodic mini-movies
 
-The studio measures **retention, follower conversion and profit**, not views alone.
+The studio measures retention, follower conversion, publishing status, production cost and profit—not views alone.
 
-## Current modules
+## Connected workflow
 
-### Money Studio
+```text
+Niche Manager
+→ Trend Radar
+→ Daily Content Planner
+→ Greta Private Studio
+→ Reality Pipeline
+→ AI Provider Hub
+→ FFmpeg master MP4
+→ Publish & Analytics
+→ Calendar & Revenue
+→ better recommendations tomorrow
+```
 
-- character bibles and custom-character creation
-- complete video planning with hooks, scripts, scenes, captions and hashtags
-- downloadable production packages
-- Viral Test Lab for retention, completion, shares, followers, cost and profit
-- SCALE / OPTIMIZE / PAUSE recommendations
-- TikTok and YouTube Shorts revenue simulator with editable assumptions
-- 30-day launch plan
+## Modules
+
+### Niche Manager
+
+Each creator has an editable profile containing:
+
+- primary niche and subtopics
+- trend keywords
+- target audience
+- competitor watchlist
+- products and revenue opportunities
+- content pillars
+- languages and platforms
+- topics and claims to avoid
+
+Profiles are stored under `storage/niches.json` and directly influence research and recommendations.
+
+### Trend Radar
+
+- YouTube trend search through the YouTube Data API
+- Google Trending Now RSS ingestion
+- manually saved TikTok Creative Center, feed and public competitor observations
+- scoring for trend strength, niche fit, monetization, originality, production ease and past performance
+- no copied TikTok login cookies, Tor routing or block-bypass code
+
+### Daily Content Planner
+
+- creates daily recommendations from Trend Radar data
+- falls back to the creator's signature series when trend data is unavailable
+- uses the Niche Manager audience, products, content pillars and avoid list
+- generates a hook, script, five-shot plan, caption and hashtags
+- approves an idea into the content calendar and Greta Private Studio queue
 
 ### Character Lab
 
-- detailed appearance DNA for Sofia, Elena and Luna
-- permanent eye, hair, face, signature-item and color-palette rules
-- personality, gestures, habits, boundaries and catchphrases
-- named reference-image slots for multiple angles and expressions
-- local reference-image and licensed voice-sample storage
-- persistent profiles under `storage/characters/`
-- voice language, accent, pitch, pace, emotional modes and provider IDs
-- wardrobe, location and physical-action libraries
-- visual, acting, voice and camera direction
-- negative prompts and continuity checks
-- pre-publish consistency gate
+- appearance, voice, personality and behavior DNA
+- wardrobe, locations, actions and camera rules
+- permanent consistency rules and negative prompts
+- reference-image slots and licensed voice samples
+- pre-publish consistency checks
 
 ### Reality Pipeline
 
-The **Reality Pipeline** implements the recommended high-realism workflow:
-
 ```text
 consenting human performance
-→ fictional/authorized identity transfer
-→ licensed voice and lip sync
-→ sound design
-→ shot-level quality control
-→ 1080 × 1920 MP4 assembly
+→ fictional or authorized creator appearance
+→ licensed or consented voice
+→ short controllable shots
+→ subtitles and sound
+→ 1080 × 1920 MP4
+→ Reality Gate
 ```
 
 It includes:
 
-- project-level actor, face, voice and media-rights gates
+- actor, face, voice and media-rights gates
 - AI-disclosure tracking
-- upload and local storage for consenting performance footage
-- approved master-identity and licensed voice references
-- five short, controllable shot templates for each character
-- editable dialogue, emotion, action, location, wardrobe and camera direction
-- provider-neutral manifests containing Character DNA and shot prompts
-- automatically generated SRT subtitles
-- downloadable production ZIPs
-- upload slots for approved generated/identity-transferred shot clips
-- optional final narration/audio mix
-- FFmpeg normalization and assembly to a 1080 × 1920 MP4
-- burned-in subtitles
-- a strict Reality Gate for face, skin, motion, hands, lip sync, lighting, world continuity, audio, facts, rights and disclosure
+- five editable shot templates
+- project assets and provider manifests
+- SRT subtitle generation
+- FFmpeg normalization, audio mixing and vertical MP4 assembly
+- a quality gate for consistency, anatomy, motion, lip sync, lighting, audio, facts, rights and disclosure
 
-Private performance footage, identity references, voices and renders are stored under `storage/` and ignored by Git.
+Private assets and renders are stored under `storage/` and ignored by Git.
 
 ### AI Provider Hub
 
-The provider hub connects an approved Reality Pipeline project to current external generation services:
-
-- **HeyGen v3** for authorized talking-avatar shots
+- **HeyGen Avatar V** for authorized talking shots
 - **Runway** for reference-controlled lifestyle and B-roll shots
-- **ElevenLabs** for a licensed synthetic voice or a voice used with documented consent
-- persisted provider task IDs, status, errors and output URLs
-- completed-video download into the existing `generated_shots` folder
-- automatic handoff to the Reality Pipeline **Assemble MP4** tab
+- **ElevenLabs** for licensed or consented speech
+- one-click submission of all shots
+- bulk provider-status refresh
+- bulk completed-clip download
+- bulk voice generation
+- per-shot regeneration controls
+- first-pass generation-cost estimate
+- provider-neutral job records
 
-The browser never receives provider API keys. Keys are read only from environment variables or `.streamlit/secrets.toml`.
+### Secure object storage
 
-## Current boundary
+The app supports S3-compatible object storage for:
 
-The provider layer is now implemented, but real generation still requires Greta's own provider accounts, credits, approved avatar/reference assets and API credentials. Runway reference images currently use an HTTPS or signed storage URL; direct object-storage upload is the next infrastructure step.
+- temporary signed HTTPS reference-image links
+- provider input media
+- publish-ready video assets
 
-Automatic public posting is intentionally excluded until content quality and account safety are proven. The next product layer is trend discovery, daily content planning, YouTube publishing/analytics and TikTok draft publishing.
+This works with AWS S3 and compatible services when the relevant environment variables are configured.
 
-## Provider configuration
+### Publish & Analytics
 
-Copy `.env.example` to `.env`, or add the same names to `.streamlit/secrets.toml`:
+Publishing is connected through the official `upload-post` Python package:
+
+- one account profile for TikTok, YouTube, Instagram and additional platforms
+- secure social-account connection link
+- multi-platform video upload
+- scheduling and posting queue
+- upload history and status polling
+- TikTok AI-generated-content flag
+- TikTok media-upload or direct-post modes
+- YouTube synthetic-media flag and privacy controls
+- Instagram Reels settings
+- creator-level and post-level analytics
+
+Publishing defaults should remain review-oriented until the workflow is proven: private YouTube, TikTok media upload or self-only, and queueing before public release.
+
+### Calendar & Revenue
+
+- 7–90 day content calendar
+- planned, queued and in-production states
+- income records for YouTube, TikTok, affiliates, sponsors, digital products, leads, services and licensing
+- revenue summaries by creator and source
+
+## Configuration
+
+Copy `.env.example` to `.env`, or add the same values to `.streamlit/secrets.toml`.
+
+### Generation providers
 
 ```text
 HEYGEN_API_KEY=
 HEYGEN_AVATAR_ID=
 HEYGEN_VOICE_ID=
+HEYGEN_ENGINE=avatar_v
+
 RUNWAYML_API_SECRET=
 RUNWAY_MODEL=gen4_turbo
+
 ELEVENLABS_API_KEY=
 ELEVENLABS_VOICE_ID=
 ELEVENLABS_MODEL_ID=eleven_multilingual_v2
 ```
 
-Never commit real values.
+### Object storage
+
+```text
+OBJECT_STORAGE_BUCKET=
+OBJECT_STORAGE_REGION=
+OBJECT_STORAGE_ENDPOINT_URL=
+OBJECT_STORAGE_ACCESS_KEY_ID=
+OBJECT_STORAGE_SECRET_ACCESS_KEY=
+OBJECT_STORAGE_PUBLIC_BASE_URL=
+OBJECT_STORAGE_PREFIX=creator-studio
+```
+
+### Trends and publishing
+
+```text
+YOUTUBE_DATA_API_KEY=
+UPLOAD_POST_API_KEY=
+UPLOAD_POST_PROFILE=sofia
+```
+
+Never commit real keys, access tokens, browser cookies or voice credentials.
 
 ## Run locally on Windows
 
@@ -117,76 +192,85 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-Open the address shown by Streamlit, normally:
+Open the Streamlit address, normally:
 
 ```text
 http://localhost:8501
 ```
 
-Use the Streamlit sidebar to open:
+The sidebar includes:
 
+- Greta Private Studio
 - Character Lab
 - Reality Pipeline
 - AI Provider Hub
+- Trend Radar
+- Daily Planner
+- Publish & Analytics
+- Calendar & Revenue
+- Niche Manager
 
-## FFmpeg requirement
+## FFmpeg
 
-The final MP4 assembly step requires FFmpeg to be installed and available on the Windows `PATH`.
-
-Verify it in PowerShell:
+Final MP4 assembly requires FFmpeg on the Windows `PATH`.
 
 ```powershell
 ffmpeg -version
 ```
 
-Restart the terminal after installing or changing the `PATH`, then restart Streamlit.
+Restart PowerShell and Streamlit after installing FFmpeg or modifying `PATH`.
 
-## Pull the latest branch into an existing clone
+## Pull the branch into an existing clone
 
 ```powershell
 git fetch origin
 git checkout feature/provider-orchestrator-v1
 git pull origin feature/provider-orchestrator-v1
+pip install -r requirements.txt
 ```
 
-## Run tests
+## Tests
 
 ```powershell
 pytest -q
 ```
 
-Tests cover:
+Coverage includes:
 
-- character identity completeness and persistence
-- safe local asset storage
-- performable scene packages
+- character persistence and asset validation
 - rights and consent blocking
-- short-shot realism plans
-- SRT timing
-- production ZIP generation
-- Reality Gate decisions
-- provider routing and request payloads
-- provider task polling and output handling
-- licensed voice audio output
-- money and growth calculations
+- shot manifests, subtitles and Reality Gate decisions
+- HeyGen, Runway and ElevenLabs request behavior
+- bulk generation routing
+- Upload-Post account connection, publishing flags and status polling
+- niche persistence and blocked-topic filtering
+- daily ideas and calendar creation
+- revenue aggregation
 
 ## First connected Sofia pilot
 
-1. Open **Character Lab** and approve Sofia's permanent face, voice, wardrobe and gestures.
-2. Open **Reality Pipeline**.
-3. Create a Sofia project and confirm all rights.
-4. Record a consenting performer completing the short actions when performance transfer is used.
-5. Upload the approved identity and licensed voice references.
-6. Open **AI Provider Hub** and verify provider readiness.
-7. Build the provider generation plan.
-8. Submit talking shots to HeyGen and reference-controlled lifestyle shots to Runway.
-9. Refresh each task and save the completed clips into Reality Pipeline.
-10. Generate or upload the licensed voice/audio mix.
-11. Render the vertical MP4 with FFmpeg.
-12. Pass every Reality Gate check before publishing.
-13. Record the 72-hour results in Viral Test Lab.
+1. Configure Sofia in **Niche Manager** and **Character Lab**.
+2. Fetch or save opportunities in **Trend Radar**.
+3. Create and approve one recommendation in **Daily Planner**.
+4. Open **Greta Private Studio**, confirm rights, and start production.
+5. Review the five shots in **Reality Pipeline**.
+6. Open **AI Provider Hub** and generate all shots.
+7. Refresh jobs, save finished clips, and assemble the master MP4.
+8. Pass every Reality Gate check.
+9. Create the `sofia` profile in **Publish & Analytics** and connect TikTok, YouTube and Instagram.
+10. Submit with review-safe privacy settings.
+11. Import analytics and record revenue.
+12. Use the results to improve the next recommendation.
 
-Do not expand to 20 characters until one character has a repeatable, high-quality production workflow and measurable audience response.
+Do not scale to many creators until one creator has a repeatable production workflow, a reliable publishing connection and measurable audience response.
+
+## Current limitations
+
+- Real generation requires paid provider accounts, credits and valid credentials.
+- Upload-Post requires its own account and connected social profiles.
+- YouTube automated trend search requires a YouTube Data API key.
+- TikTok broad organic trends are saved from compliant public sources rather than reverse-engineered logged-in endpoints.
+- This is the working Streamlit product layer. A React/FastAPI multi-user SaaS migration should follow after the single-creator workflow is proven.
 
 ## Repository branch
 
