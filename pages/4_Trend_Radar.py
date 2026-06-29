@@ -6,6 +6,7 @@ import streamlit as st
 
 from creator_os import add_trends, load_data, top_trends
 from creator_studio import SEED_CHARACTERS
+from justone_trend_source import JustOneTikTokSource
 from niche_manager import get_niche
 from trend_engine import GoogleTrendingNowSource, YouTubeTrendSource, manual_tiktok_trend, to_dicts
 
@@ -14,11 +15,12 @@ st.set_page_config(page_title="Trend Radar", page_icon="📡", layout="wide")
 st.title("📡 Trend Radar")
 st.caption("Discover content opportunities, score them for the creator's niche, and send the strongest topics to the daily planner.")
 
-try:
-    if not os.getenv("YOUTUBE_DATA_API_KEY") and "YOUTUBE_DATA_API_KEY" in st.secrets:
-        os.environ["YOUTUBE_DATA_API_KEY"] = str(st.secrets["YOUTUBE_DATA_API_KEY"])
-except FileNotFoundError:
-    pass
+for secret_name in ["YOUTUBE_DATA_API_KEY", "JUSTONEAPI_TOKEN"]:
+    try:
+        if not os.getenv(secret_name) and secret_name in st.secrets:
+            os.environ[secret_name] = str(st.secrets[secret_name])
+    except FileNotFoundError:
+        pass
 
 data = load_data()
 character = st.selectbox("Creator", list(SEED_CHARACTERS))
@@ -35,7 +37,7 @@ summary_c.metric("Competitors tracked", len(niche_profile["competitors"]))
 if niche_profile["competitors"]:
     st.caption("Competitor watchlist: " + ", ".join(niche_profile["competitors"]))
 
-source_a, source_b = st.columns(2)
+source_a, source_b, source_c = st.columns(3)
 with source_a:
     st.subheader("YouTube")
     query = st.text_input("YouTube search", value=f"{niche} tips")
@@ -72,6 +74,33 @@ with source_b:
             st.rerun()
         except Exception as error:
             st.error(str(error))
+
+with source_c:
+    st.subheader("TikTok data")
+    tiktok_query = st.text_input("TikTok keyword", value=keywords[0] if keywords else niche)
+    publish_time = st.selectbox(
+        "Published",
+        ["ONE_DAY", "ONE_WEEK", "ONE_MONTH", "THREE_MONTHS", "ALL"],
+        index=1,
+    )
+    sort_type = st.selectbox("TikTok sort", ["MOST_LIKED", "RELEVANCE"])
+    if st.button("Search TikTok through JustOneAPI", type="primary", use_container_width=True):
+        try:
+            items = JustOneTikTokSource().search(
+                tiktok_query,
+                niche=niche,
+                niche_keywords=keywords,
+                region=region,
+                publish_time=publish_time,
+                sort_type=sort_type,
+            )
+            added = add_trends(data, to_dicts(items))
+            st.success(f"Added {added} new TikTok trend items.")
+            st.rerun()
+        except Exception as error:
+            st.error(str(error))
+    if not JustOneTikTokSource().configured:
+        st.caption("Add JUSTONEAPI_TOKEN to enable structured TikTok search.")
 
 st.divider()
 st.subheader("Save a TikTok or competitor trend")
