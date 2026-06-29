@@ -6,6 +6,7 @@ import streamlit as st
 
 from creator_os import approve_idea, create_daily_ideas, link_calendar_video, load_data
 from creator_studio import SEED_CHARACTERS
+from niche_manager import get_niche
 from studio_bridge import add_video, load_data as load_studio_data, save_data as save_studio_data
 
 
@@ -18,10 +19,18 @@ studio_data = load_studio_data()
 
 c1, c2, c3, c4 = st.columns(4)
 character = c1.selectbox("Creator", list(SEED_CHARACTERS))
-language = c2.selectbox("Language", ["English", "Italian", "Albanian", "Macedonian"])
-platform = c3.selectbox("Platform", ["TikTok + YouTube Shorts", "TikTok", "YouTube Shorts"])
+niche_profile = get_niche(character)
+language_options = niche_profile["languages"] or ["English"]
+language = c2.selectbox("Language", language_options)
+platform = c3.selectbox("Platform", ["TikTok + YouTube Shorts", "TikTok", "YouTube Shorts", "Instagram Reels"])
 planned_date = c4.date_input("Plan for", date.today())
 count = st.slider("Ideas to create", 1, 5, 3)
+
+n1, n2, n3 = st.columns(3)
+n1.metric("Niche", niche_profile["primary_niche"])
+n2.metric("Audience", niche_profile["audience"][:45] + ("…" if len(niche_profile["audience"]) > 45 else ""))
+n3.metric("Revenue paths", len(niche_profile["products"]))
+st.caption("Content pillars: " + ", ".join(niche_profile["content_pillars"]))
 
 if st.button("Create today's recommendations", type="primary", use_container_width=True):
     created = create_daily_ideas(
@@ -31,6 +40,7 @@ if st.button("Create today's recommendations", type="primary", use_container_wid
         platform=platform,
         planned_date=planned_date,
         count=count,
+        niche_profile=niche_profile,
     )
     st.success(f"Created {len(created)} recommendations.")
     st.rerun()
@@ -55,6 +65,7 @@ else:
             a.metric("Trend source", idea.get("trend_source") or "Signature series")
             b.metric("Trend score", idea.get("trend_score", 0))
             c.metric("Historical fit", idea.get("historical_fit", 50))
+            st.markdown(f"**Audience:** {idea.get('audience', '')}")
             st.markdown(f"**Hook:** {plan['script']['hook']}")
             st.markdown(f"**Payoff:** {plan['script']['payoff']}")
             st.markdown(f"**Call to action:** {plan['script']['call_to_action']}")
@@ -77,6 +88,8 @@ else:
                 use_container_width=True,
                 hide_index=True,
             )
+            if idea.get("products"):
+                st.caption("Possible monetization: " + ", ".join(idea["products"]))
             if idea["status"] == "PROPOSED":
                 if st.button("Approve and send to production queue", key=f"approve_{idea['id']}", type="primary"):
                     approve_idea(os_data, idea["id"])
