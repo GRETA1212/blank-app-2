@@ -6,6 +6,7 @@ import streamlit as st
 
 from creator_os import add_trends, load_data, top_trends
 from creator_studio import SEED_CHARACTERS
+from niche_manager import get_niche
 from trend_engine import GoogleTrendingNowSource, YouTubeTrendSource, manual_tiktok_trend, to_dicts
 
 
@@ -13,36 +14,38 @@ st.set_page_config(page_title="Trend Radar", page_icon="📡", layout="wide")
 st.title("📡 Trend Radar")
 st.caption("Discover content opportunities, score them for the creator's niche, and send the strongest topics to the daily planner.")
 
-for secret_name in ["YOUTUBE_DATA_API_KEY"]:
-    try:
-        if not os.getenv(secret_name) and secret_name in st.secrets:
-            os.environ[secret_name] = str(st.secrets[secret_name])
-    except FileNotFoundError:
-        pass
+try:
+    if not os.getenv("YOUTUBE_DATA_API_KEY") and "YOUTUBE_DATA_API_KEY" in st.secrets:
+        os.environ["YOUTUBE_DATA_API_KEY"] = str(st.secrets["YOUTUBE_DATA_API_KEY"])
+except FileNotFoundError:
+    pass
 
 data = load_data()
 character = st.selectbox("Creator", list(SEED_CHARACTERS))
-profile = SEED_CHARACTERS[character]
+niche_profile = get_niche(character)
+niche = niche_profile["primary_niche"]
 region = st.text_input("Region code", value="US", max_chars=2).upper()
-default_keywords = {
-    "Beauty": "makeup, skincare, beauty, eyeliner, lipstick, hair",
-    "Real Estate": "apartment, house, property, interior, mortgage, renovation",
-    "Mini Movies": "mystery, storytime, short film, romance, thriller, plot twist",
-}.get(profile.niche, profile.niche)
-keywords_text = st.text_input("Niche keywords", value=default_keywords)
+keywords_text = st.text_input("Niche keywords", value=", ".join(niche_profile["keywords"]))
 keywords = [item.strip() for item in keywords_text.split(",") if item.strip()]
+
+summary_a, summary_b, summary_c = st.columns(3)
+summary_a.metric("Niche", niche)
+summary_b.metric("Subtopics", len(niche_profile["subtopics"]))
+summary_c.metric("Competitors tracked", len(niche_profile["competitors"]))
+if niche_profile["competitors"]:
+    st.caption("Competitor watchlist: " + ", ".join(niche_profile["competitors"]))
 
 source_a, source_b = st.columns(2)
 with source_a:
     st.subheader("YouTube")
-    query = st.text_input("YouTube search", value=f"{profile.niche} tips")
+    query = st.text_input("YouTube search", value=f"{niche} tips")
     days = st.slider("Recent days", 1, 30, 14)
     max_results = st.slider("Videos to inspect", 5, 50, 20)
     if st.button("Fetch YouTube trends", type="primary", use_container_width=True):
         try:
             items = YouTubeTrendSource().search(
                 query,
-                niche=profile.niche,
+                niche=niche,
                 niche_keywords=keywords,
                 region=region,
                 days=days,
@@ -60,7 +63,7 @@ with source_b:
     if st.button("Fetch Google trends", type="primary", use_container_width=True):
         try:
             items = GoogleTrendingNowSource().fetch(
-                niche=profile.niche,
+                niche=niche,
                 niche_keywords=keywords,
                 region=region,
             )
@@ -71,11 +74,11 @@ with source_b:
             st.error(str(error))
 
 st.divider()
-st.subheader("Save a TikTok trend")
-st.caption("Use TikTok Creative Center or your feed, then save the topic here. This avoids unauthorized scraping.")
+st.subheader("Save a TikTok or competitor trend")
+st.caption("Use TikTok Creative Center, your own feed, or a public competitor link. The app stores the observation without copying account cookies or bypassing platform controls.")
 with st.form("manual_tiktok"):
     title = st.text_input("Trend, sound, hook, or format")
-    url = st.text_input("TikTok or Creative Center link")
+    url = st.text_input("Public TikTok, Creative Center, or competitor link")
     notes = st.text_area("Why it is working")
     c1, c2, c3 = st.columns(3)
     strength = c1.slider("Trend strength", 0, 100, 75)
@@ -84,14 +87,14 @@ with st.form("manual_tiktok"):
     c4, c5 = st.columns(2)
     originality = c4.slider("Original angle available", 0, 100, 70)
     ease = c5.slider("Production ease", 0, 100, 75)
-    save = st.form_submit_button("Save TikTok trend", type="primary")
+    save = st.form_submit_button("Save trend", type="primary")
 if save:
     if not title.strip():
         st.error("Enter a trend title.")
     else:
         item = manual_tiktok_trend(
             title,
-            niche=profile.niche,
+            niche=niche,
             region=region,
             strength=strength,
             niche_fit=niche_fit,
@@ -102,12 +105,12 @@ if save:
             notes=notes,
         )
         add_trends(data, to_dicts([item]))
-        st.success("TikTok trend saved.")
+        st.success("Trend saved.")
         st.rerun()
 
 st.divider()
 st.subheader(f"Best opportunities for {character}")
-items = top_trends(data, niche=profile.niche, limit=50)
+items = top_trends(data, niche=niche, limit=50)
 if not items:
     st.info("Fetch or save trends above.")
 else:
