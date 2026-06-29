@@ -101,7 +101,12 @@ def test_heygen_adapter_uses_authorized_avatar_and_script():
         {"data": {"video_id": "heygen-video", "status": "queued"}},
         {"data": {"id": "heygen-video", "status": "completed", "video_url": "https://example.test/talking.mp4"}},
     ])
-    provider = HeyGenVideoProvider(api_key="test", default_avatar_id="avatar-1", http=http)
+    provider = HeyGenVideoProvider(
+        api_key="test",
+        default_avatar_id="avatar-1",
+        default_voice_id="voice-1",
+        http=http,
+    )
     request = VideoRequest(
         project_id="p1",
         shot_number=1,
@@ -117,6 +122,7 @@ def test_heygen_adapter_uses_authorized_avatar_and_script():
     assert completed.status is JobStatus.SUCCEEDED
     assert http.calls[0][2]["payload"]["avatar_id"] == "avatar-1"
     assert http.calls[0][2]["payload"]["aspect_ratio"] == "9:16"
+    assert http.calls[0][2]["payload"]["voice_id"] == "voice-1"
 
 
 def test_elevenlabs_adapter_writes_audio(tmp_path):
