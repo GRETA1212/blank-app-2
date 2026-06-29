@@ -29,14 +29,17 @@ class UploadPostConnector:
     Upload-Post profile username that owns its connected social accounts.
     """
 
-    def __init__(self, api_key: str | None = None) -> None:
+    def __init__(self, api_key: str | None = None, client: Any | None = None) -> None:
         self.api_key = api_key or os.getenv("UPLOAD_POST_API_KEY", "")
+        self._injected_client = client
 
     @property
     def configured(self) -> bool:
-        return bool(self.api_key.strip())
+        return bool(self._injected_client is not None or self.api_key.strip())
 
     def _client(self):
+        if self._injected_client is not None:
+            return self._injected_client
         if not self.configured:
             raise ProviderError("UPLOAD_POST_API_KEY is not configured.")
         try:
