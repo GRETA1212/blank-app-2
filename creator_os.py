@@ -86,8 +86,13 @@ def _historical_fit(data: dict[str, Any], character: str) -> float:
     records = [item for item in data["analytics"] if item.get("character") == character]
     if not records:
         return 50.0
-    scores = [float(item.get("growth_score", 0)) for item in records[-20:]]
+    scores = [float(item.get("growth_score", 0)) for item in records[-20:] if item.get("growth_score") is not None]
     return round(sum(scores) / len(scores), 1) if scores else 50.0
+
+
+def _blocked_topic(title: str, avoid_topics: list[str]) -> bool:
+    lowered = title.lower()
+    return any(item.lower() in lowered for item in avoid_topics if item.strip())
 
 
 def create_daily_ideas(
@@ -98,9 +103,17 @@ def create_daily_ideas(
     platform: str,
     planned_date: date,
     count: int = 3,
+    niche_profile: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     profile = SEED_CHARACTERS[character]
-    candidates = top_trends(data, niche=profile.niche, limit=max(count * 4, 10))
+    niche_profile = dict(niche_profile or {})
+    active_niche = str(niche_profile.get("primary_niche") or profile.niche)
+    avoid_topics = [str(item) for item in niche_profile.get("avoid_topics", [])]
+    candidates = [
+        item
+        for item in top_trends(data, niche=active_niche, limit=max(count * 6, 15))
+        if not _blocked_topic(str(item.get("title", "")), avoid_topics)
+    ]
     if not candidates:
         candidates = [
             {
@@ -108,10 +121,11 @@ def create_daily_ideas(
                 "title": series,
                 "source": "Signature series",
                 "score": 60.0,
-                "niche": profile.niche,
+                "niche": active_niche,
                 "url": None,
             }
             for index, series in enumerate(profile.signature_series, start=1)
+            if not _blocked_topic(series, avoid_topics)
         ]
 
     created: list[dict[str, Any]] = []
@@ -131,7 +145,7 @@ def create_daily_ideas(
             "created_at": _now(),
             "planned_date": planned_date.isoformat(),
             "character": character,
-            "niche": profile.niche,
+            "niche": active_niche,
             "topic": topic,
             "trend_id": trend.get("id"),
             "trend_source": trend.get("source"),
@@ -141,6 +155,10 @@ def create_daily_ideas(
             "platform": platform,
             "language": language,
             "status": "PROPOSED",
+            "audience": niche_profile.get("audience", profile.audience),
+            "content_pillars": list(niche_profile.get("content_pillars", [])),
+            "products": list(niche_profile.get("products", [])),
+            "avoid_topics": avoid_topics,
             "plan": plan,
         }
         data["ideas"].append(idea)
