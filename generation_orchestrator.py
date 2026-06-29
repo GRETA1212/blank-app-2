@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from character_lab import load_character
+from object_storage import StorageError, publish_reference_image
 from providers import (
     ElevenLabsVoiceProvider,
     HeyGenVideoProvider,
@@ -18,12 +18,13 @@ from providers import (
     VoiceRequest,
 )
 from providers.http_client import HttpClient
-from realism_pipeline import (
-    RealismProject,
-    build_realism_manifest,
-    ensure_project_structure,
-    load_project,
-)
+from realism_pipeline import RealismProject, build_realism_manifest, ensure_project_structure, load_project
+
+
+PROVIDER_COST_EUR_PER_SECOND = {
+    "heygen": 0.067,
+    "runway": 0.05,
+}
 
 
 def _now() -> str:
@@ -37,20 +38,26 @@ def provider_readiness() -> list[dict[str, Any]]:
     return [
         {
             "provider": "HeyGen",
+            "key": "heygen",
             "role": "Talking creator shots",
             "configured": heygen.configured,
+            "estimated_eur_per_second": PROVIDER_COST_EUR_PER_SECOND["heygen"],
             "missing": [] if heygen.configured else ["HEYGEN_API_KEY", "HEYGEN_AVATAR_ID"],
         },
         {
             "provider": "Runway",
+            "key": "runway",
             "role": "Lifestyle and B-roll shots",
             "configured": runway.configured,
+            "estimated_eur_per_second": PROVIDER_COST_EUR_PER_SECOND["runway"],
             "missing": [] if runway.configured else ["RUNWAYML_API_SECRET"],
         },
         {
             "provider": "ElevenLabs",
+            "key": "elevenlabs",
             "role": "Licensed or consented voice",
             "configured": elevenlabs.configured,
+            "estimated_eur_per_second": None,
             "missing": [] if elevenlabs.configured else ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID"],
         },
     ]
@@ -62,6 +69,11 @@ def _require_rights(project: RealismProject) -> None:
         raise ProviderError("Generation blocked by rights gate: " + " ".join(blockers))
 
 
+def _route_provider(shot_number: int, dialogue: str) -> tuple[str, str]:
+    talking_shot = shot_number % 2 == 1 and bool(dialogue.strip())
+    return ("heygen", "talking_creator") if talking_shot else ("runway", "lifestyle_broll")
+
+
 def build_generation_plan(project: RealismProject) -> dict[str, Any]:
     _require_rights(project)
     character = load_character(project.character_name)
@@ -70,16 +82,17 @@ def build_generation_plan(project: RealismProject) -> dict[str, Any]:
 
     for item in manifest["shots"]:
         shot_number = int(item["shot_number"])
-        talking_shot = shot_number % 2 == 1 and bool(item.get("dialogue", "").strip())
-        provider = "heygen" if talking_shot else "runway"
+        provider, purpose = _route_provider(shot_number, item.get("dialogue", ""))
+        duration = float(item["duration_seconds"])
         shots.append(
             {
                 "shot_number": shot_number,
                 "title": item["title"],
                 "provider": provider,
-                "purpose": "talking_creator" if talking_shot else "lifestyle_broll",
-                "duration_seconds": item["duration_seconds"],
-                "script": item.get("dialogue", "") if talking_shot else None,
+                "purpose": purpose,
+                "duration_seconds": duration,
+                "estimated_cost_eur": round(duration * PROVIDER_COST_EUR_PER_SECOND[provider], 2),
+                "script": item.get("dialogue", "") if provider == "heygen" else None,
                 "prompt": item["visual_prompt"],
                 "negative_prompt": item["negative_prompt"],
                 "requires_reference_image_url": provider == "runway",
@@ -88,12 +101,13 @@ def build_generation_plan(project: RealismProject) -> dict[str, Any]:
         )
 
     plan = {
-        "schema_version": 1,
+        "schema_version": 2,
         "project_id": project.project_id,
         "character": project.character_name,
         "created_at": _now(),
         "rights_approved": True,
-        "strategy": "Odd shots use a talking-avatar provider; even shots use reference-controlled lifestyle generation.",
+        "strategy": "Talking shots use HeyGen; lifestyle and B-roll shots use Runway. Each shot stays replaceable.",
+        "estimated_total_cost_eur": round(sum(item["estimated_cost_eur"] for item in shots), 2),
         "shots": shots,
     }
     path = ensure_project_structure(project.project_id)["manifests"] / "provider_generation_plan.json"
@@ -184,11 +198,74 @@ def submit_shot_job(
     return _save_job_record(project_id, shot_number, provider.create_video(request))
 
 
+def submit_all_shots(
+    project_id: str,
+    *,
+    reference_image_url: str | None = None,
+    publish_local_reference: bool = True,
+) -> dict[str, Any]:
+    project = load_project(project_id)
+    _require_rights(project)
+    plan = build_generation_plan(project)
+    existing = load_provider_jobs(project_id)
+    active_shots = {
+        int(item["shot_number"])
+        for item in existing
+        if item.get("status") in {JobStatus.QUEUED.value, JobStatus.PROCESSING.value, JobStatus.SUCCEEDED.value}
+    }
+    needs_reference = any(item["requires_reference_image_url"] and item["shot_number"] not in active_shots for item in plan["shots"])
+    if needs_reference and not reference_image_url and publish_local_reference:
+        try:
+            reference_image_url = publish_reference_image(project_id, expires_seconds=7200)
+        except StorageError as error:
+            raise ProviderError(str(error)) from error
+    submitted: list[dict[str, Any]] = []
+    skipped: list[int] = []
+    errors: list[dict[str, Any]] = []
+    for shot in plan["shots"]:
+        number = int(shot["shot_number"])
+        if number in active_shots:
+            skipped.append(number)
+            continue
+        try:
+            submitted.append(
+                submit_shot_job(
+                    project_id,
+                    number,
+                    shot["provider"],
+                    reference_image_url=reference_image_url if shot["provider"] == "runway" else None,
+                )
+            )
+        except ProviderError as error:
+            errors.append({"shot_number": number, "provider": shot["provider"], "error": str(error)})
+    return {"submitted": submitted, "skipped": skipped, "errors": errors, "reference_image_url": reference_image_url}
+
+
 def refresh_shot_job(project_id: str, provider_name: str, provider_job_id: str, shot_number: int) -> dict[str, Any]:
     project = load_project(project_id)
     _require_rights(project)
     provider = _video_provider(provider_name)
     return _save_job_record(project_id, shot_number, provider.get_job(provider_job_id))
+
+
+def refresh_all_jobs(project_id: str) -> dict[str, Any]:
+    refreshed: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    for record in load_provider_jobs(project_id):
+        if record.get("status") in {JobStatus.SUCCEEDED.value, JobStatus.FAILED.value}:
+            continue
+        try:
+            refreshed.append(
+                refresh_shot_job(
+                    project_id,
+                    str(record["provider"]),
+                    str(record["provider_job_id"]),
+                    int(record["shot_number"]),
+                )
+            )
+        except ProviderError as error:
+            errors.append({"id": record.get("id"), "error": str(error)})
+    return {"refreshed": refreshed, "errors": errors}
 
 
 def generate_shot_voice(project_id: str, shot_number: int) -> Path:
@@ -202,6 +279,21 @@ def generate_shot_voice(project_id: str, shot_number: int) -> Path:
     provider = ElevenLabsVoiceProvider()
     output = ensure_project_structure(project_id)["audio"] / f"shot-{int(shot_number):02d}-voice.mp3"
     return provider.synthesize(VoiceRequest(text=shot.dialogue), output)
+
+
+def generate_all_voices(project_id: str) -> dict[str, Any]:
+    project = load_project(project_id)
+    _require_rights(project)
+    created: list[str] = []
+    errors: list[dict[str, Any]] = []
+    for shot in project.shots:
+        if not shot.dialogue.strip():
+            continue
+        try:
+            created.append(str(generate_shot_voice(project_id, shot.shot_number)))
+        except ProviderError as error:
+            errors.append({"shot_number": shot.shot_number, "error": str(error)})
+    return {"created": created, "errors": errors}
 
 
 def save_completed_video(project_id: str, record_id: str, http: HttpClient | None = None) -> Path:
@@ -220,3 +312,21 @@ def save_completed_video(project_id: str, record_id: str, http: HttpClient | Non
     destination = ensure_project_structure(project_id)["generated_shots"] / f"{int(record['shot_number']):02d}-{record['provider']}.mp4"
     destination.write_bytes(payload)
     return destination
+
+
+def save_all_completed(project_id: str) -> dict[str, Any]:
+    saved: list[str] = []
+    skipped: list[str] = []
+    errors: list[dict[str, Any]] = []
+    for record in load_provider_jobs(project_id):
+        destination = ensure_project_structure(project_id)["generated_shots"] / f"{int(record['shot_number']):02d}-{record['provider']}.mp4"
+        if destination.exists():
+            skipped.append(str(destination))
+            continue
+        if record.get("status") != JobStatus.SUCCEEDED.value:
+            continue
+        try:
+            saved.append(str(save_completed_video(project_id, str(record["id"]))))
+        except ProviderError as error:
+            errors.append({"id": record.get("id"), "error": str(error)})
+    return {"saved": saved, "skipped": skipped, "errors": errors}
