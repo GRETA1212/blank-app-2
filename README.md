@@ -38,7 +38,7 @@ The studio measures **retention, follower conversion and profit**, not views alo
 
 ### Reality Pipeline
 
-The new **Reality Pipeline** implements the recommended high-realism workflow:
+The **Reality Pipeline** implements the recommended high-realism workflow:
 
 ```text
 consenting human performance
@@ -68,20 +68,48 @@ It includes:
 
 Private performance footage, identity references, voices and renders are stored under `storage/` and ignored by Git.
 
-## What the application does not yet do
+### AI Provider Hub
 
-The application does not currently call a commercial image-to-video, identity-transfer, digital-twin, voice or lip-sync provider automatically.
+The provider hub connects an approved Reality Pipeline project to current external generation services:
 
-It creates the complete provider handoff, accepts the approved returned shot clips, and assembles the final video locally. Provider integrations require the user's own accounts, API credentials, provider terms and consent-compliant workflow.
+- **HeyGen v3** for authorized talking-avatar shots
+- **Runway** for reference-controlled lifestyle and B-roll shots
+- **ElevenLabs** for a licensed synthetic voice or a voice used with documented consent
+- persisted provider task IDs, status, errors and output URLs
+- completed-video download into the existing `generated_shots` folder
+- automatic handoff to the Reality Pipeline **Assemble MP4** tab
 
-Automatic posting is intentionally excluded until content quality and account safety are proven.
+The browser never receives provider API keys. Keys are read only from environment variables or `.streamlit/secrets.toml`.
+
+## Current boundary
+
+The provider layer is now implemented, but real generation still requires Greta's own provider accounts, credits, approved avatar/reference assets and API credentials. Runway reference images currently use an HTTPS or signed storage URL; direct object-storage upload is the next infrastructure step.
+
+Automatic public posting is intentionally excluded until content quality and account safety are proven. The next product layer is trend discovery, daily content planning, YouTube publishing/analytics and TikTok draft publishing.
+
+## Provider configuration
+
+Copy `.env.example` to `.env`, or add the same names to `.streamlit/secrets.toml`:
+
+```text
+HEYGEN_API_KEY=
+HEYGEN_AVATAR_ID=
+HEYGEN_VOICE_ID=
+RUNWAYML_API_SECRET=
+RUNWAY_MODEL=gen4_turbo
+ELEVENLABS_API_KEY=
+ELEVENLABS_VOICE_ID=
+ELEVENLABS_MODEL_ID=eleven_multilingual_v2
+```
+
+Never commit real values.
 
 ## Run locally on Windows
 
 ```powershell
 git clone https://github.com/GRETA1212/blank-app-2.git
 cd blank-app-2
-git checkout feature/virtual-creator-studio
+git checkout feature/provider-orchestrator-v1
 
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -99,6 +127,7 @@ Use the Streamlit sidebar to open:
 
 - Character Lab
 - Reality Pipeline
+- AI Provider Hub
 
 ## FFmpeg requirement
 
@@ -116,8 +145,8 @@ Restart the terminal after installing or changing the `PATH`, then restart Strea
 
 ```powershell
 git fetch origin
-git checkout feature/virtual-creator-studio
-git pull origin feature/virtual-creator-studio
+git checkout feature/provider-orchestrator-v1
+git pull origin feature/provider-orchestrator-v1
 ```
 
 ## Run tests
@@ -136,27 +165,31 @@ Tests cover:
 - SRT timing
 - production ZIP generation
 - Reality Gate decisions
+- provider routing and request payloads
+- provider task polling and output handling
+- licensed voice audio output
 - money and growth calculations
 
-## First ultra-real pilot
+## First connected Sofia pilot
 
 1. Open **Character Lab** and approve Sofia's permanent face, voice, wardrobe and gestures.
 2. Open **Reality Pipeline**.
 3. Create a Sofia project and confirm all rights.
-4. Record a consenting performer completing the five short actions.
-5. Upload the master identity and licensed voice reference.
-6. Export the provider package.
-7. Generate or identity-transfer each shot with an authorized provider.
-8. Upload only approved shot clips.
-9. Add the licensed narration/audio mix.
-10. Render the vertical MP4 with FFmpeg.
-11. Pass every Reality Gate check before publishing.
-12. Record the 72-hour results in Viral Test Lab.
+4. Record a consenting performer completing the short actions when performance transfer is used.
+5. Upload the approved identity and licensed voice references.
+6. Open **AI Provider Hub** and verify provider readiness.
+7. Build the provider generation plan.
+8. Submit talking shots to HeyGen and reference-controlled lifestyle shots to Runway.
+9. Refresh each task and save the completed clips into Reality Pipeline.
+10. Generate or upload the licensed voice/audio mix.
+11. Render the vertical MP4 with FFmpeg.
+12. Pass every Reality Gate check before publishing.
+13. Record the 72-hour results in Viral Test Lab.
 
 Do not expand to 20 characters until one character has a repeatable, high-quality production workflow and measurable audience response.
 
 ## Repository branch
 
 ```text
-feature/virtual-creator-studio
+feature/provider-orchestrator-v1
 ```
