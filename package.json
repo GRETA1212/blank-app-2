@@ -1,0 +1,15 @@
+{
+  "name": "virtual-creator-studio-sidecars",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "upload-post": "node scripts/upload_post_bridge.mjs",
+    "test:node": "node --check scripts/upload_post_bridge.mjs"
+  },
+  "dependencies": {
+    "upload-post": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
