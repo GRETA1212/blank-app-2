@@ -17,9 +17,22 @@ jobs:
       - name: Install backend dependencies
         run: pip install -r backend/requirements.txt
       - name: Compile backend
-        run: python -m py_compile backend/app/main.py
-      - name: Import app
-        run: PYTHONPATH=backend python -c "from app.main import app; assert app.title == 'Fit360 AI API'"
+        run: python -m py_compile backend/app/main.py backend/app/phase2.py
+      - name: Import app and phase-two routes
+        run: |
+          PYTHONPATH=backend python - <<'PY'
+          from app.main import app
+          assert app.title == 'Fit360 AI API'
+          paths = {route.path for route in app.routes}
+          required = {
+              '/api/body-profile/{user_id}',
+              '/api/catalog',
+              '/api/fit/recommend',
+              '/api/catalog/complete-look',
+              '/api/multiview',
+          }
+          assert required.issubset(paths), required - paths
+          PY
 
   frontend:
     runs-on: ubuntu-latest
