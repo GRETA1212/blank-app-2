@@ -1,0 +1,255 @@
+.profile-section,
+.wardrobe-section,
+.history-section {
+  padding: 20px 0 78px;
+}
+
+.profile-card {
+  display: grid;
+  grid-template-columns: 1fr .7fr 1.2fr auto;
+  gap: 14px;
+  align-items: end;
+  padding: 22px;
+  border: 1px solid rgba(23,23,23,.1);
+  border-radius: 22px;
+  background: rgba(255,255,255,.52);
+}
+
+.profile-card label,
+.garment-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.profile-card label > span,
+.garment-meta > span,
+.save-status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  opacity: .55;
+}
+
+.profile-card input,
+.garment-meta input,
+.garment-meta select {
+  width: 100%;
+  border: 1px solid rgba(23,23,23,.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,.72);
+  padding: 12px 13px;
+  outline: none;
+}
+
+.profile-card input:focus,
+.garment-meta input:focus,
+.garment-meta select:focus {
+  border-color: rgba(23,23,23,.38);
+}
+
+.secondary-button.compact {
+  width: auto;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.save-status {
+  grid-column: 1 / -1;
+}
+
+.garment-meta {
+  padding: 14px;
+  border: 1px solid rgba(23,23,23,.1);
+  border-radius: 18px;
+  background: rgba(255,255,255,.48);
+}
+
+.garment-meta button {
+  border: 0;
+  border-radius: 12px;
+  background: #171717;
+  color: #fff;
+  padding: 11px 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.count-pill {
+  border: 1px solid rgba(23,23,23,.12);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .62;
+}
+
+.wardrobe-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.wardrobe-item {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(23,23,23,.1);
+  border-radius: 18px;
+  background: rgba(255,255,255,.5);
+  transition: transform .18s ease, border-color .18s ease;
+}
+
+.wardrobe-item:hover {
+  transform: translateY(-2px);
+}
+
+.wardrobe-item.selected {
+  border-color: rgba(23,23,23,.58);
+  box-shadow: 0 0 0 2px rgba(23,23,23,.08);
+}
+
+.wardrobe-select {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.wardrobe-select > img,
+.wardrobe-select > svg {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  display: block;
+  background: #e8e3dc;
+}
+
+.wardrobe-select > svg {
+  padding: 72px;
+}
+
+.wardrobe-select > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 13px 14px;
+}
+
+.wardrobe-select strong {
+  font-size: 13px;
+}
+
+.wardrobe-select small {
+  font-size: 10px;
+  text-transform: capitalize;
+  opacity: .5;
+}
+
+.delete-button {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,.7);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.empty-strip {
+  min-height: 92px;
+  border: 1px dashed rgba(23,23,23,.18);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 12px;
+  opacity: .58;
+}
+
+.looks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.look-card {
+  overflow: hidden;
+  border: 1px solid rgba(23,23,23,.1);
+  border-radius: 18px;
+  background: rgba(255,255,255,.52);
+}
+
+.look-card > img,
+.look-placeholder {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: #ded8cf;
+}
+
+.look-card > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 13px 14px;
+}
+
+.look-card strong {
+  font-size: 12px;
+}
+
+.look-card span {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: .45;
+}
+
+@media (max-width: 900px) {
+  .profile-card {
+    grid-template-columns: 1fr 1fr;
+  }
+  .wardrobe-grid,
+  .looks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .profile-card {
+    grid-template-columns: 1fr;
+  }
+  .secondary-button.compact {
+    width: 100%;
+  }
+  .wardrobe-grid,
+  .looks-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .wardrobe-select > img,
+  .wardrobe-select > svg {
+    height: 150px;
+  }
+  .look-card > img,
+  .look-placeholder {
+    height: 190px;
+  }
+}
