@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-app = FastAPI(title="Fit360 AI API", version="0.2.0")
+app = FastAPI(title="Fit360 AI API", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -130,7 +130,7 @@ def row_to_dict(row: sqlite3.Row | None) -> dict | None:
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "fit360-api", "version": "0.2.0"}
+    return {"status": "ok", "service": "fit360-api", "version": "0.3.0"}
 
 
 @app.get("/api/profile/{user_id}")
@@ -327,17 +327,30 @@ def try_on(request: TryOnRequest) -> dict:
             detail="FASHN_API_KEY is not configured on the server.",
         )
 
-    payload = {
-        "model_name": "tryon-v1.6",
-        "inputs": {
+    model_name = os.getenv("FIT360_VTON_MODEL", "tryon-v1.6").strip().lower()
+    private_output = os.getenv("FIT360_PRIVATE_OUTPUT", "false").strip().lower() in {"1", "true", "yes"}
+
+    if model_name == "tryon-max":
+        inputs = {
+            "model_image": request.person_image,
+            "product_image": request.garment_image,
+            "resolution": "1k",
+            "generation_mode": "fast",
+            "output_format": "jpeg",
+            "return_base64": private_output,
+        }
+    else:
+        model_name = "tryon-v1.6"
+        inputs = {
             "model_image": request.person_image,
             "garment_image": request.garment_image,
             "category": fashn_category(request.category),
             "mode": "balanced",
             "output_format": "jpeg",
-            "return_base64": False,
-        },
-    }
+            "return_base64": private_output,
+        }
+
+    payload = {"model_name": model_name, "inputs": inputs}
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -361,6 +374,7 @@ def try_on(request: TryOnRequest) -> dict:
     return {
         "status": "queued",
         "provider": "fashn",
+        "model": model_name,
         "prediction_id": prediction_id,
         "output": [],
     }
@@ -397,10 +411,19 @@ def try_on_status(prediction_id: str) -> dict:
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"FASHN status request failed: {exc}") from exc
 
+    output = data.get("output") or []
+    if isinstance(output, dict):
+        output = output.get("images") or []
+
     return {
         "id": prediction_id,
         "status": data.get("status", "unknown"),
         "provider": "fashn",
-        "output": data.get("output") or [],
+        "output": output,
         "error": data.get("error"),
     }
+
+
+from app.phase2 import router as phase2_router
+
+app.include_router(phase2_router)
